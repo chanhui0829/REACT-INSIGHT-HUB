@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react'; // ✅ useEffect 추가
 import { useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import { CircleSmall, Funnel, NotebookPen, PencilLine, Search } from 'lucide-react';
@@ -96,14 +96,26 @@ function App() {
   const user = useAuthStore((s) => s.user);
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // ✅ 뒤로가기 시 기억하기 위해 URL에서 초기값 가져오기
   const category = searchParams.get('category') ?? 'all';
+  const initialSort = searchParams.get('sort') ?? 'latest';
+  const initialPage = Number(searchParams.get('page')) || 1;
 
-  const ITEMS_PER_PAGE = 10;
-  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
+  const [currentPage, setCurrentPage] = useState(initialPage);
 
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortOption, setSortOption] = useState('latest');
+  const [sortOption, setSortOption] = useState(initialSort);
+
+  // ✅ [추가] 정렬이나 페이지가 바뀔 때 URL 주소창 업데이트 (뒤로가기 기억용)
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    params.set('category', category);
+    params.set('sort', sortOption);
+    params.set('page', String(currentPage));
+    setSearchParams(params, { replace: true });
+  }, [category, sortOption, currentPage, setSearchParams]);
 
   // =============================================================
   // 🔥 Pagination Index 계산
@@ -168,7 +180,7 @@ function App() {
       setCurrentPage(1);
       setSearchQuery('');
       setSearchInput('');
-      setSearchParams({ category: value || 'all' });
+      setSearchParams({ category: value || 'all', sort: 'latest', page: '1' });
     },
     [setSearchParams]
   );
@@ -191,24 +203,24 @@ function App() {
   // 🔥 렌더링
   // =============================================================
   return (
-    <main className="w-full h-full min-h-[720px] flex flex-col lg:flex-row p-6 gap-6 mt-4">
-      {/* 모바일 카테고리 */}
-      <div className="lg:hidden w-full mb-4 sticky top-[72px] z-50">
+    <main className="w-full min-h-screen flex flex-col lg:flex-row p-6 gap-6 mt-4 overflow-x-hidden">
+      {/* 모바일 카테고리 - sticky 레이아웃 겹침 방지를 위해 z-index와 margin 조정 */}
+      <div className="lg:hidden w-full mb-4 sticky top-[72px] z-30">
         <AppSidebar category={category} setCategory={handleCategoryChange} />
       </div>
 
       {/* 데스크탑 카테고리 */}
-      <aside className="hidden lg:block lg:min-w-60 lg:w-60 lg:h-full">
+      <aside className="hidden lg:block lg:min-w-60 lg:w-60">
         <AppSidebar category={category} setCategory={handleCategoryChange} />
       </aside>
 
-      {/* 메인 */}
-      <section className="w-full flex-1 flex flex-col gap-12 mr-2">
+      {/* 메인 - min-w-0으로 그리드 깨짐 방지 */}
+      <section className="w-full flex-1 min-w-0 flex flex-col gap-12 lg:mr-2">
         {/* Floating */}
-        <div className="fixed flex gap-2 right-1/2 bottom-10 translate-x-1/2 z-20 items-center">
+        <div className="fixed flex gap-2 right-1/2 bottom-10 translate-x-1/2 z-40 items-center">
           <Button
             variant="destructive"
-            className="!py-5 !px-6 rounded-full hover:scale-110 transition"
+            className="!py-5 !px-6 rounded-full hover:scale-110 transition shadow-lg"
             onClick={handleRoute}
           >
             <PencilLine />
@@ -240,7 +252,7 @@ function App() {
         <header className="flex flex-col gap-1 justify-center items-center">
           <div className="flex items-center gap-4">
             <img src="/assets/gifs/gif-002.gif" className="w-14 h-14" />
-            <h1 className="text-3xl font-semibold text-center mt-4">
+            <h1 className="text-2xl md:text-3xl font-semibold text-center mt-4">
               지식과 인사이트를 모아, <br />
               토픽으로 깊이 있게 나누세요!
             </h1>
@@ -248,24 +260,22 @@ function App() {
         </header>
 
         {/* 검색 */}
-        <div className="flex justify-center w-full mb-10">
+        <div className="flex justify-center w-full mb-10 px-2">
           <div className="relative w-full max-w-2xl">
             <div className="flex items-center rounded-full border border-zinc-700 bg-black overflow-hidden focus-within:ring-2 focus-within:ring-zinc-500">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-400" />
-
+              <Search className="ml-5 text-zinc-400 shrink-0" />
               <Input
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="토픽 제목 또는 내용을 입력하세요."
-                className="flex-1 h-14 pl-14 border-none text-zinc-100"
+                className="flex-1 h-14 border-none text-zinc-100 focus-visible:ring-0"
               />
-
               <Button
                 onClick={handleSearch}
-                className="h-14 bg-zinc-400 rounded-none rounded-r-full pl-5"
+                className="h-14 bg-zinc-800 hover:bg-zinc-700 text-white rounded-none px-6 shrink-0"
               >
-                <p className="pr-2 tracking-wide">검색</p>
+                검색
               </Button>
             </div>
           </div>
@@ -280,7 +290,13 @@ function App() {
                 <p className="text-xs text-zinc-400">정렬 기준</p>
               </div>
 
-              <Select value={sortOption} onValueChange={setSortOption}>
+              <Select
+                value={sortOption}
+                onValueChange={(v) => {
+                  setSortOption(v);
+                  setCurrentPage(1);
+                }}
+              >
                 <SelectTrigger className="w-40 border-zinc-700">
                   <SelectValue />
                 </SelectTrigger>
@@ -300,7 +316,7 @@ function App() {
           {isLoading ? (
             <p className="text-center text-muted-foreground mt-10">불러오는 중입니다...</p>
           ) : topics.length > 0 ? (
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-2">
               {topics.map((topic) => (
                 <TopicCard key={topic.id} props={topic} />
               ))}
@@ -316,12 +332,15 @@ function App() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <Pagination>
+          <Pagination className="mb-20">
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
                   href="#"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentPage(Math.max(1, currentPage - 1));
+                  }}
                 />
               </PaginationItem>
 
@@ -330,7 +349,10 @@ function App() {
                   <PaginationLink
                     href="#"
                     isActive={page === currentPage}
-                    onClick={() => setCurrentPage(page)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentPage(page);
+                    }}
                   >
                     {page}
                   </PaginationLink>
@@ -340,7 +362,10 @@ function App() {
               <PaginationItem>
                 <PaginationNext
                   href="#"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentPage(Math.min(totalPages, currentPage + 1));
+                  }}
                 />
               </PaginationItem>
             </PaginationContent>
