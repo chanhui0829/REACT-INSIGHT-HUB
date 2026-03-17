@@ -97,8 +97,6 @@ export default function CreateTopic() {
   useEffect(() => {
     if (!topic) return;
 
-    window.scrollTo({ top: 0, behavior: 'instant' });
-
     setTitle(topic.title);
     setContent(topic.content ? JSON.parse(topic.content) : []);
     setCategory(topic.category);

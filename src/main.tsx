@@ -19,6 +19,7 @@ import SignIn from '@/pages/sign-in';
 import AuthCallback from '@/pages/auth/callback';
 import CreateTopic from '@/pages/topics/[topic_id]/create';
 import TopicDetail from '@/pages/topics/[topic_id]/detail';
+import ScrollToTop from './components/common/ScrollToTop';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +36,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             <Route element={<RootLayout />}>
               <Route index element={<App />} />

@@ -75,7 +75,6 @@ export default function TopicDetail() {
 
   // 🔥 첫 렌더링 시 조회수 증가
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
     if (topicId) increaseViews.mutate();
   }, [topicId]);
 

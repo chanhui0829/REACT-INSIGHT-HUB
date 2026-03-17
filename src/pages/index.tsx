@@ -110,6 +110,7 @@ function App() {
 
   // ✅ [추가] 정렬이나 페이지가 바뀔 때 URL 주소창 업데이트 (뒤로가기 기억용)
   useEffect(() => {
+    window.scrollTo(0, 0);
     const params = new URLSearchParams(searchParams);
     params.set('category', category);
     params.set('sort', sortOption);
