@@ -203,14 +203,14 @@ function App() {
   // 🔥 렌더링
   // =============================================================
   return (
-    <main className="w-full min-h-screen flex flex-col lg:flex-row p-6 gap-6 mt-4 overflow-x-hidden">
+    <main className="w-full min-h-screen flex flex-col lg:flex-row p-6 gap-6 mt-2 items-start">
       {/* 모바일 카테고리 - sticky 레이아웃 겹침 방지를 위해 z-index와 margin 조정 */}
-      <div className="lg:hidden w-full mb-4 sticky top-[72px] z-30">
+      <div className="lg:hidden w-full mb-2 sticky z-30">
         <AppSidebar category={category} setCategory={handleCategoryChange} />
       </div>
 
       {/* 데스크탑 카테고리 */}
-      <aside className="hidden lg:block lg:min-w-60 lg:w-60">
+      <aside className="hidden lg:block lg:w-64 lg:shrink-0 sticky top-24">
         <AppSidebar category={category} setCategory={handleCategoryChange} />
       </aside>
 
