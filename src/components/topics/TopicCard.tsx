@@ -81,23 +81,6 @@ function TopicCardComponent({ props }: Props) {
     staleTime: Infinity,
   });
 
-  // 🔥 좋아요 개수 Query
-  const { data: likesData = [] } = useQuery({
-    queryKey: ['topicLikes', props.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('topic_likes')
-        .select('user_id')
-        .eq('topic_id', props.id);
-
-      if (error) throw error;
-      return data ?? [];
-    },
-    staleTime: 5000,
-  });
-
-  const likesCount = likesData.length;
-
   return (
     <Card
       className="w-full h-fit p-4 gap-4 cursor-pointer hover:scale-[1.01] transition-all duration-200"
@@ -139,7 +122,7 @@ function TopicCardComponent({ props }: Props) {
             <Separator orientation="vertical" className="!h-4" />
             <p className="flex items-center gap-1">
               <Heart color="#ef4444" fill="#ef4444" size={14} />
-              <span>{likesCount}</span>
+              <span>{props.likes}</span>
             </p>
           </div>
           <p className="text-xs text-gray-400">{dayjs(props.created_at).fromNow()}</p>

@@ -79,7 +79,7 @@ export default function TopicDetail() {
   }, [topicId]);
 
   // ======================================================
-  // 🔥 3. 좋아요 정보 가져오기 (topic_likes 기반)
+  // 🔥 3. 좋아요 정보 가져오기 (isLiked 확인용)
   // ======================================================
   const { data: likesData = [] } = useQuery({
     queryKey: ['topicLikes', topicId],
@@ -95,7 +95,7 @@ export default function TopicDetail() {
     enabled: !!topicId,
   });
 
-  const likesCount = likesData.length;
+  // ✅ topic.likes를 직접 사용하므로 별도의 count 로직은 삭제하고 isLiked 여부만 확인해!
   const isLiked = likesData.some((row) => row.user_id === user?.id);
 
   // ======================================================
@@ -112,9 +112,10 @@ export default function TopicDetail() {
     },
 
     onSuccess: () => {
+      // ✅ 이 부분이 핵심! topic 쿼리를 무효화해서 최신 likes 숫자를 다시 가져오게 해.
+      queryClient.invalidateQueries({ queryKey: ['topic', topicId] });
       queryClient.invalidateQueries({ queryKey: ['topicLikes', topicId] });
       queryClient.invalidateQueries({ queryKey: ['topics'] });
-      queryClient.invalidateQueries({ queryKey: ['topic', topicId] });
     },
 
     onError: () => {
@@ -230,7 +231,8 @@ export default function TopicDetail() {
             onClick={() => toggleLike.mutate()}
           >
             <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
-            <span>{likesCount}</span>
+            {/* ✅ topic.likes 값을 직접 렌더링하도록 수정했어! */}
+            <span>{topic.likes}</span>
           </button>
         </div>
       </div>
