@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
@@ -23,6 +23,8 @@ import {
 import { DialogClose } from '@radix-ui/react-dialog';
 import { AppDeleteDialog } from './AppDeleteDialog';
 import { TOPIC_STATUS, type Topic } from '@/types/topic.type';
+// ✅ useQuery와 useQueryClient 추가
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 // ------------------------------
 // 🔹 Props 타입 정의
@@ -37,21 +39,18 @@ interface Props {
 export function AppDraftsDialog({ children }: Props) {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
 
-  const [drafts, setDrafts] = useState<Topic[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Dialog가 열렸는지 감지
+  // Dialog가 열렸는지 감지 (상태값은 유지하되, 데이터 패칭은 useQuery가 담당)
   const [open, setOpen] = useState(false);
 
   // ------------------------------
-  // 🔹 임시 저장 토픽 조회 (최적화)
+  // 🔹 임시 저장 토픽 조회 (React Query 도입)
   // ------------------------------
-  const fetchDrafts = useCallback(async () => {
-    if (!user?.id) return;
-
-    setIsLoading(true);
-    try {
+  const { data: drafts = [], isLoading } = useQuery({
+    queryKey: ['drafts', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
       const { data, error } = await supabase
         .from('topic')
         .select('*')
@@ -60,37 +59,30 @@ export function AppDraftsDialog({ children }: Props) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDrafts(data || []);
-    } catch (error) {
-      console.error(error);
-      toast.error('임시 저장 토픽을 불러오는 중 오류가 발생했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id]);
-
-  // ------------------------------
-  // 🔹 Dialog 열릴 때만 불러오기
-  // ------------------------------
-  useEffect(() => {
-    if (open) fetchDrafts();
-  }, [open, fetchDrafts]);
+      return (data as Topic[]) || [];
+    },
+    enabled: !!user?.id, // 유저가 있을 때만 실행
+  });
 
   // ------------------------------
   // 🔹 삭제 핸들러 (메모이징)
   // ------------------------------
-  const handleDelete = useCallback(async (id: number) => {
-    try {
-      const { error } = await supabase.from('topic').delete().eq('id', id);
-      if (error) throw error;
+  const handleDelete = useCallback(
+    async (id: number) => {
+      try {
+        const { error } = await supabase.from('topic').delete().eq('id', id);
+        if (error) throw error;
 
-      setDrafts((prev) => prev.filter((draft) => draft.id !== id));
-      toast.success('임시 저장된 토픽이 삭제되었습니다.');
-    } catch (error) {
-      console.error(error);
-      toast.error('삭제 중 오류가 발생했습니다.');
-    }
-  }, []);
+        // ✅ 삭제 성공 후 쿼리 무효화 (목록 새로고침)
+        await queryClient.invalidateQueries({ queryKey: ['drafts', user?.id] });
+        toast.success('임시 저장된 토픽이 삭제되었습니다.');
+      } catch (error) {
+        console.error(error);
+        toast.error('삭제 중 오류가 발생했습니다.');
+      }
+    },
+    [queryClient, user?.id]
+  );
 
   // ------------------------------
   // 🔹 리스트 UI useMemo로 캐싱
@@ -104,7 +96,8 @@ export function AppDraftsDialog({ children }: Props) {
       );
     }
 
-    if (drafts.length === 0) {
+    // ✅ 에러 방지: drafts가 배열인지 확실히 체크
+    if (!Array.isArray(drafts) || drafts.length === 0) {
       return (
         <div className="min-h-60 flex items-center justify-center">
           <p className="text-muted-foreground/50">임시 저장된 토픽이 없습니다.</p>
@@ -113,12 +106,15 @@ export function AppDraftsDialog({ children }: Props) {
     }
 
     return (
-      <div className="w-full max-w-2xl mx-auto h-80 space-y-2 mt-3 overflow-y-auto">
+      <div className="w-full max-w-2xl mx-auto h-80 space-y-2 mt-3 overflow-y-auto pr-1">
         {drafts.map((draft, index) => (
           <div
             key={draft.id}
             className="w-full flex items-center py-2 px-4 gap-3 rounded-md bg-card/50 cursor-pointer hover:bg-card/70 transition "
-            onClick={() => navigate(`/topics/create/${draft.id}`)}
+            onClick={() => {
+              setOpen(false); // 다이얼로그 닫기
+              navigate(`/topics/create/${draft.id}`);
+            }}
           >
             <div className="flex justify-between w-full items-start">
               <div className="flex w-full items-start gap-2 overflow-hidden">
@@ -162,7 +158,17 @@ export function AppDraftsDialog({ children }: Props) {
   // ------------------------------
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogTrigger asChild>
+        <div className="relative inline-flex cursor-pointer">
+          {children}
+          {Array.isArray(drafts) && drafts.length > 0 && (
+            <span className="absolute top-[1px] right-[-1px] flex h-3 w-3 z-[50]">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-zinc-900"></span>
+            </span>
+          )}
+        </div>
+      </DialogTrigger>
 
       <DialogContent>
         <DialogHeader>
@@ -175,7 +181,9 @@ export function AppDraftsDialog({ children }: Props) {
         <div className="grid gap-3 py-4">
           <div className="flex items-center gap-2">
             <p>임시 저장</p>
-            <p className="text-base text-emerald-500 -mr-[6px]">{drafts.length}</p>
+            <p className="text-base text-emerald-500 -mr-[6px]">
+              {Array.isArray(drafts) ? drafts.length : 0}
+            </p>
             <p>건</p>
           </div>
 

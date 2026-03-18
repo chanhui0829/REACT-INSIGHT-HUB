@@ -1,7 +1,7 @@
-import { useMemo, useState, useCallback, useEffect } from 'react'; // ✅ useEffect 추가
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
-import { CircleSmall, Funnel, NotebookPen, PencilLine, Search } from 'lucide-react';
+import { Funnel, NotebookPen, PencilLine, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 // Store & Utils
@@ -30,28 +30,14 @@ import {
   SelectValue,
 } from '@/components/ui';
 
-// =============================================================
-// 🔥 타입
-// =============================================================
 type TopicsResponse = {
   topics: Topic[];
   total: number;
 };
 
 // =============================================================
-// 🔥 API
+// 🔥 API - 쿼리 최적화
 // =============================================================
-async function fetchHasDrafts(userId: string) {
-  const { data, error } = await supabase
-    .from('topic')
-    .select('id', { count: 'exact' })
-    .eq('author', userId)
-    .eq('status', TOPIC_STATUS.TEMP)
-    .limit(1);
-
-  if (error) throw new Error(error.message);
-  return (data?.length ?? 0) > 0;
-}
 
 async function fetchTopics(filters: {
   category: string;
@@ -68,7 +54,6 @@ async function fetchTopics(filters: {
     .eq('status', TOPIC_STATUS.PUBLISH);
 
   if (category !== 'all') query = query.eq('category', category);
-
   if (searchQuery) {
     query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
   }
@@ -81,54 +66,46 @@ async function fetchTopics(filters: {
     .range(startIndex, endIndex);
 
   if (error) throw new Error(error.message);
-
-  return {
-    topics: data ?? [],
-    total: count ?? 0,
-  };
+  return { topics: data ?? [], total: count ?? 0 };
 }
 
-// =============================================================
-// 🔥 Component
-// =============================================================
 function App() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // ✅ 뒤로가기 시 기억하기 위해 URL에서 초기값 가져오기
+  // URL에서 초기값 파싱
   const category = searchParams.get('category') ?? 'all';
   const initialSort = searchParams.get('sort') ?? 'latest';
   const initialPage = Number(searchParams.get('page')) || 1;
 
   const ITEMS_PER_PAGE = 8;
   const [currentPage, setCurrentPage] = useState(initialPage);
-
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState(initialSort);
 
-  // ✅ [추가] 정렬이나 페이지가 바뀔 때 URL 주소창 업데이트 (뒤로가기 기억용)
+  // ✅ URL 동기화 로직 최적화 (무한 리렌더링 방지)
   useEffect(() => {
-    window.scrollTo(0, 0);
-    const params = new URLSearchParams(searchParams);
-    params.set('category', category);
-    params.set('sort', sortOption);
-    params.set('page', String(currentPage));
-    setSearchParams(params, { replace: true });
+    const params = new URLSearchParams(window.location.search);
+    const currentCategory = params.get('category') ?? 'all';
+    const currentSort = params.get('sort') ?? 'latest';
+    const currentPageStr = params.get('page') ?? '1';
+
+    if (
+      currentCategory !== category ||
+      currentSort !== sortOption ||
+      currentPageStr !== String(currentPage)
+    ) {
+      setSearchParams({ category, sort: sortOption, page: String(currentPage) }, { replace: true });
+    }
   }, [category, sortOption, currentPage, setSearchParams]);
 
-  // =============================================================
-  // 🔥 Pagination Index 계산
-  // =============================================================
   const { startIndex, endIndex } = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return { startIndex: start, endIndex: start + ITEMS_PER_PAGE - 1 };
   }, [currentPage]);
 
-  // =============================================================
-  // 🔥 Query Key 안정화를 위한 filters
-  // =============================================================
   const filters = useMemo(
     () => ({
       category,
@@ -140,32 +117,15 @@ function App() {
     [category, searchQuery, sortOption, startIndex, endIndex]
   );
 
-  // =============================================================
-  // 🔥 Drafts Check -> 저장 있을 시, 빨간점 ON
-  // =============================================================
-  const { data: hasDrafts = false } = useQuery({
-    queryKey: ['drafts', user?.id],
-    queryFn: () => fetchHasDrafts(user!.id),
-    enabled: !!user?.id,
-    staleTime: 1000 * 60 * 10,
-  });
-
-  // =============================================================
-  // 🔥 토픽 리스트 Query
-  // =============================================================
   const { data, isLoading } = useQuery({
     queryKey: ['topics', filters],
     queryFn: () => fetchTopics(filters),
     staleTime: 1000 * 30,
-    gcTime: 1000 * 60,
   });
 
   const topics = data?.topics ?? [];
   const totalPages = Math.ceil((data?.total ?? 0) / ITEMS_PER_PAGE);
 
-  // =============================================================
-  // 🔥 이벤트 핸들러
-  // =============================================================
   const handleSearch = useCallback(() => {
     if (searchInput.trim().length < 2) {
       toast.warning('검색어를 두 글자 이상 입력해주세요.');
@@ -200,24 +160,18 @@ function App() {
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }, [currentPage, totalPages]);
 
-  // =============================================================
-  // 🔥 렌더링
-  // =============================================================
   return (
     <main className="w-full min-h-screen flex flex-col lg:flex-row p-6 gap-6 mt-2 items-start">
-      {/* 모바일 카테고리 - sticky 레이아웃 겹침 방지를 위해 z-index와 margin 조정 */}
       <div className="lg:hidden w-full mb-2 sticky z-30">
         <AppSidebar category={category} setCategory={handleCategoryChange} />
       </div>
 
-      {/* 데스크탑 카테고리 */}
       <aside className="hidden lg:block lg:w-64 lg:shrink-0 sticky top-24">
         <AppSidebar category={category} setCategory={handleCategoryChange} />
       </aside>
 
-      {/* 메인 - min-w-0으로 그리드 깨짐 방지 */}
       <section className="w-full flex-1 min-w-0 flex flex-col gap-12 lg:mr-2">
-        {/* Floating */}
+        {/* Floating Action Buttons */}
         <div className="fixed flex gap-2 right-1/2 bottom-10 translate-x-1/2 z-40 items-center">
           <Button
             variant="destructive"
@@ -228,31 +182,21 @@ function App() {
             나만의 토픽 작성
           </Button>
 
+          {/* ✅ AppDraftsDialog가 빨간 점을 직접 관리함 */}
           <AppDraftsDialog>
-            <div className="relative">
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-full w-10 h-10 p-0 border-2 border-zinc-700 bg-zinc-800"
-              >
-                <NotebookPen className="w-6 h-6" />
-              </Button>
-
-              {hasDrafts && (
-                <CircleSmall
-                  className="absolute top-0 right-0 text-red-500"
-                  fill="#EF4444"
-                  size={14}
-                />
-              )}
-            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full w-10 h-10 p-0 border-2 border-zinc-700 bg-zinc-800"
+            >
+              <NotebookPen className="w-6 h-6" />
+            </Button>
           </AppDraftsDialog>
         </div>
 
-        {/* 헤더 */}
         <header className="flex flex-col gap-1 justify-center items-center">
           <div className="flex items-center gap-4">
-            <img src="/assets/gifs/gif-002.gif" className="w-14 h-14" />
+            <img src="/assets/gifs/gif-002.gif" className="w-14 h-14" alt="insight-gif" />
             <h1 className="text-2xl md:text-3xl font-semibold text-center mt-4">
               지식과 인사이트를 모아, <br />
               토픽으로 깊이 있게 나누세요!
@@ -260,7 +204,6 @@ function App() {
           </div>
         </header>
 
-        {/* 검색 */}
         <div className="flex justify-center w-full mb-10 px-2">
           <div className="relative w-full max-w-2xl">
             <div className="flex items-center rounded-full border border-zinc-700 bg-black overflow-hidden focus-within:ring-2 focus-within:ring-zinc-500">
@@ -282,7 +225,6 @@ function App() {
           </div>
         </div>
 
-        {/* 리스트 */}
         <div className="w-full flex flex-col gap-6">
           <div className="flex w-full justify-end px-2">
             <div className="flex items-center gap-3">
@@ -290,7 +232,6 @@ function App() {
                 <Funnel size={15} className="text-zinc-400" />
                 <p className="text-xs text-zinc-400">정렬 기준</p>
               </div>
-
               <Select
                 value={sortOption}
                 onValueChange={(v) => {
@@ -331,7 +272,6 @@ function App() {
           )}
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <Pagination className="mb-20">
             <PaginationContent>
@@ -344,7 +284,6 @@ function App() {
                   }}
                 />
               </PaginationItem>
-
               {visiblePages.map((page) => (
                 <PaginationItem key={page}>
                   <PaginationLink
@@ -359,7 +298,6 @@ function App() {
                   </PaginationLink>
                 </PaginationItem>
               ))}
-
               <PaginationItem>
                 <PaginationNext
                   href="#"

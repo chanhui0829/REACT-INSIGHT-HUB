@@ -97,10 +97,10 @@ export default function CreateTopic() {
   useEffect(() => {
     if (!topic) return;
 
-    setTitle(topic.title);
+    setTitle(topic.title || '');
     setContent(topic.content ? JSON.parse(topic.content) : []);
-    setCategory(topic.category);
-    setThumbnail(topic.thumbnail);
+    setCategory(topic.category || '');
+    setThumbnail(topic.thumbnail || null);
   }, [topic]);
 
   // ================================================
@@ -161,7 +161,9 @@ export default function CreateTopic() {
         toast.success('임시 저장 완료!');
       }
 
-      queryClient.invalidateQueries({ queryKey: ['topics'] });
+      // ✅ 임시 저장 목록 쿼리 무효화 (메인 페이지 빨간 점 업데이트용)
+      await queryClient.invalidateQueries({ queryKey: ['drafts', user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ['topics'] });
     } catch (err) {
       console.error(err);
       toast.error('저장 중 오류가 발생했습니다.');
@@ -199,7 +201,11 @@ export default function CreateTopic() {
       }
 
       toast.success('토픽이 발행되었습니다!');
-      queryClient.invalidateQueries({ queryKey: ['topics'] });
+
+      // ✅ 발행 시에도 쿼리 무효화
+      await queryClient.invalidateQueries({ queryKey: ['drafts', user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ['topics'] });
+
       navigate('/');
     } catch (err) {
       console.error(err);
