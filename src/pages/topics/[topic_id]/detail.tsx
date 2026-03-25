@@ -15,6 +15,10 @@ import CommentBox from './comment';
 import type { Topic } from '@/types/topic.type';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+type TopicLike = {
+  user_id: string;
+};
+
 export default function TopicDetail() {
   const { id } = useParams();
   const topicId = Number(id);
@@ -111,15 +115,47 @@ export default function TopicDetail() {
       return data;
     },
 
-    onSuccess: () => {
-      // ✅ 이 부분이 핵심! topic 쿼리를 무효화해서 최신 likes 숫자를 다시 가져오게 해.
-      queryClient.invalidateQueries({ queryKey: ['topic', topicId] });
-      queryClient.invalidateQueries({ queryKey: ['topicLikes', topicId] });
-      queryClient.invalidateQueries({ queryKey: ['topics'] });
+    // 🔥 핵심: 낙관적 업데이트
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['topic', topicId] });
+
+      const prevTopic = queryClient.getQueryData<Topic>(['topic', topicId]);
+      const prevLikes = queryClient.getQueryData<TopicLike[]>(['topicLikes', topicId]);
+
+      if (prevTopic) {
+        queryClient.setQueryData(['topic', topicId], {
+          ...prevTopic,
+          likes: isLiked ? prevTopic.likes - 1 : prevTopic.likes + 1,
+        });
+      }
+
+      if (prevLikes) {
+        queryClient.setQueryData(
+          ['topicLikes', topicId],
+          isLiked
+            ? prevLikes.filter((row) => row.user_id !== user?.id)
+            : [...prevLikes, { user_id: user?.id }]
+        );
+      }
+
+      return { prevTopic, prevLikes };
     },
 
-    onError: () => {
+    // 🔥 실패 시 롤백
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prevTopic) {
+        queryClient.setQueryData(['topic', topicId], ctx.prevTopic);
+      }
+      if (ctx?.prevLikes) {
+        queryClient.setQueryData(['topicLikes', topicId], ctx.prevLikes);
+      }
       toast.error('좋아요 처리 중 오류가 발생했습니다.');
+    },
+
+    // 🔥 서버 동기화
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['topic', topicId] });
+      queryClient.invalidateQueries({ queryKey: ['topics'] });
     },
   });
 
@@ -225,6 +261,7 @@ export default function TopicDetail() {
 
           {/* 좋아요 */}
           <button
+            disabled={toggleLike.isPending}
             className={`flex items-center gap-1.5 transition cursor-pointer ${
               isLiked ? 'text-red-500' : 'text-gray-200'
             }`}

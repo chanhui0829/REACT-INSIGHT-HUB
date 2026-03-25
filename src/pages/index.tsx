@@ -2,7 +2,7 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import { Funnel, NotebookPen, PencilLine, Search } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 // Store & Utils
 import { useAuthStore } from '@/stores';
@@ -71,10 +71,10 @@ async function fetchTopics(filters: {
 
 function App() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // URL에서 초기값 파싱
   const category = searchParams.get('category') ?? 'all';
   const initialSort = searchParams.get('sort') ?? 'latest';
   const initialPage = Number(searchParams.get('page')) || 1;
@@ -85,7 +85,6 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState(initialSort);
 
-  // ✅ URL 동기화 로직 최적화 (무한 리렌더링 방지)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const currentCategory = params.get('category') ?? 'all';
@@ -117,11 +116,25 @@ function App() {
     [category, searchQuery, sortOption, startIndex, endIndex]
   );
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['topics', filters],
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['topics', category, searchQuery, sortOption, currentPage],
     queryFn: () => fetchTopics(filters),
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 60 * 5,
+    placeholderData: (prev) => prev,
   });
+
+  // 🔥 Prefetch next page
+  useEffect(() => {
+    queryClient.prefetchQuery({
+      queryKey: ['topics', category, searchQuery, sortOption, currentPage + 1],
+      queryFn: () =>
+        fetchTopics({
+          ...filters,
+          startIndex: currentPage * ITEMS_PER_PAGE,
+          endIndex: currentPage * ITEMS_PER_PAGE + ITEMS_PER_PAGE - 1,
+        }),
+    });
+  }, [category, searchQuery, sortOption, currentPage]);
 
   const topics = data?.topics ?? [];
   const totalPages = Math.ceil((data?.total ?? 0) / ITEMS_PER_PAGE);
@@ -171,7 +184,6 @@ function App() {
       </aside>
 
       <section className="w-full flex-1 min-w-0 flex flex-col gap-12 lg:mr-2">
-        {/* Floating Action Buttons */}
         <div className="fixed flex gap-2 right-1/2 bottom-10 translate-x-1/2 z-40 items-center">
           <Button
             variant="destructive"
@@ -182,7 +194,6 @@ function App() {
             나만의 토픽 작성
           </Button>
 
-          {/* ✅ AppDraftsDialog가 빨간 점을 직접 관리함 */}
           <AppDraftsDialog>
             <Button
               variant="outline"
@@ -256,13 +267,20 @@ function App() {
           </div>
 
           {isLoading ? (
-            <p className="text-center text-muted-foreground mt-10">불러오는 중입니다...</p>
-          ) : topics.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-2">
-              {topics.map((topic) => (
-                <TopicCard key={topic.id} props={topic} />
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-40 rounded-xl bg-zinc-800 animate-pulse" />
               ))}
             </div>
+          ) : topics.length > 0 ? (
+            <>
+              {isFetching && <p className="text-center text-xs text-zinc-500">업데이트 중...</p>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-2">
+                {topics.map((topic) => (
+                  <TopicCard key={topic.id} props={topic} />
+                ))}
+              </div>
+            </>
           ) : (
             <p className="text-center text-muted-foreground mt-10">
               {searchQuery
