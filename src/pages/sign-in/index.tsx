@@ -6,8 +6,9 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
 // Store & utils
-import { useAuthStore } from '@/stores';
-import supabase from '@/lib/supabase';
+import { useAuthStore } from '@/stores'; // 🔥 유지
+
+import { signInWithGoogleService } from '@/services/authService';
 
 // UI components
 import {
@@ -42,11 +43,13 @@ export default function SignIn() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 회원가입 후 redirect 시 자동 입력될 이메일
   const prefillEmail = location.state?.email || '';
 
-  // Zustand user — setUser는 useAuthListener가 관리하므로 여기선 user만 조회
   const user = useAuthStore((state) => state.user);
+
+  // 🔥 추가
+  const login = useAuthStore((state) => state.login);
+  const loading = useAuthStore((state) => state.loading);
 
   // ------------------------------
   // 🔹 react-hook-form
@@ -67,13 +70,7 @@ export default function SignIn() {
   // 🔹 Google 로그인
   // ------------------------------
   const handleGoogleSignIn = useCallback(async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        queryParams: { access_type: 'offline', prompt: 'consent' },
-        redirectTo: `${import.meta.env.VITE_SUPABASE_BASE_URL}/auth/callback`,
-      },
-    });
+    const { error } = await signInWithGoogleService();
 
     if (error) toast.error(error.message);
   }, []);
@@ -84,42 +81,34 @@ export default function SignIn() {
   const onSubmit = useCallback(
     async (values: z.infer<typeof formSchema>) => {
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: values.email,
-          password: values.password,
-        });
+        const success = await login(values.email, values.password);
 
-        if (error) {
-          toast.error(error.message);
-          return;
-        }
-
-        if (data.session) {
+        if (success) {
           toast.success('로그인이 성공하였습니다.');
           navigate('/');
+        } else {
+          toast.error('이메일 또는 비밀번호를 확인해주세요.');
         }
       } catch (err) {
         console.error(err);
         toast.error('로그인 처리 중 오류가 발생했습니다.');
       }
     },
-    [navigate]
+    [navigate, login]
   );
 
   // ------------------------------
-  // 🔹 UI (절대 수정 X)
+  // 🔹 UI
   // ------------------------------
   return (
     <main className="w-full h-full min-h-[720px] flex items-center justify-center p-6 gap-6">
       <div className="w-full max-w-[400px] flex flex-col px-6 gap-6">
-        {/* 헤더 */}
         <header className="flex flex-col">
           <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">로그인</h4>
           <p className="text-muted-foreground">로그인을 위한 정보를 입력해주세요.</p>
         </header>
 
         <section className="grid gap-3">
-          {/* 소셜 로그인 */}
           <Button type="button" variant="secondary" onClick={handleGoogleSignIn}>
             <img
               src="/assets/icons/icon-003.png"
@@ -129,7 +118,6 @@ export default function SignIn() {
             구글 로그인
           </Button>
 
-          {/* 구분선 */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t"></span>
@@ -141,10 +129,8 @@ export default function SignIn() {
             </div>
           </div>
 
-          {/* 로그인 폼 */}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {/* 이메일 */}
               <FormField
                 control={form.control}
                 name="email"
@@ -159,7 +145,6 @@ export default function SignIn() {
                 )}
               />
 
-              {/* 비밀번호 */}
               <FormField
                 control={form.control}
                 name="password"
@@ -174,10 +159,15 @@ export default function SignIn() {
                 )}
               />
 
-              {/* 버튼 영역 */}
               <div className="flex flex-col gap-3">
-                <Button type="submit" variant="outline" className="flex-1 !bg-sky-800/50">
-                  로그인
+                {/* 🔥 loading만 추가 */}
+                <Button
+                  type="submit"
+                  variant="outline"
+                  className="flex-1 !bg-sky-800/50"
+                  disabled={loading}
+                >
+                  {loading ? '로그인 중...' : '로그인'}
                 </Button>
 
                 <div className="text-center text-sm">

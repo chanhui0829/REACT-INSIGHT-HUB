@@ -2,10 +2,11 @@ import type React from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import dayjs from 'dayjs';
-import { toast } from 'sonner';
 
 import { useAuthStore } from '@/stores';
-import supabase from '@/lib/supabase';
+
+import { QUERY_KEYS } from '@/constants/querykey.constant';
+import { fetchDrafts, deleteTopic } from '@/services/topic.service';
 
 import {
   Badge,
@@ -22,9 +23,10 @@ import {
 
 import { DialogClose } from '@radix-ui/react-dialog';
 import { AppDeleteDialog } from './AppDeleteDialog';
-import { TOPIC_STATUS, type Topic } from '@/types/topic.type';
-// ✅ useQuery와 useQueryClient 추가
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+
+// useQuery와 useQueryClient
+import { useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
 // ------------------------------
 // 🔹 Props 타입 정의
@@ -39,6 +41,7 @@ interface Props {
 export function AppDraftsDialog({ children }: Props) {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+
   const queryClient = useQueryClient();
 
   // Dialog가 열렸는지 감지 (상태값은 유지하되, 데이터 패칭은 useQuery가 담당)
@@ -48,20 +51,9 @@ export function AppDraftsDialog({ children }: Props) {
   // 🔹 임시 저장 토픽 조회 (React Query 도입)
   // ------------------------------
   const { data: drafts = [], isLoading } = useQuery({
-    queryKey: ['drafts', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('topic')
-        .select('*')
-        .eq('author', user.id)
-        .eq('status', TOPIC_STATUS.TEMP)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return (data as Topic[]) || [];
-    },
-    enabled: !!user?.id, // 유저가 있을 때만 실행
+    queryKey: QUERY_KEYS.drafts(user?.id),
+    queryFn: () => fetchDrafts(user!.id),
+    enabled: !!user?.id,
   });
 
   // ------------------------------
@@ -70,18 +62,15 @@ export function AppDraftsDialog({ children }: Props) {
   const handleDelete = useCallback(
     async (id: number) => {
       try {
-        const { error } = await supabase.from('topic').delete().eq('id', id);
-        if (error) throw error;
-
-        // ✅ 삭제 성공 후 쿼리 무효화 (목록 새로고침)
-        await queryClient.invalidateQueries({ queryKey: ['drafts', user?.id] });
-        toast.success('임시 저장된 토픽이 삭제되었습니다.');
-      } catch (error) {
-        console.error(error);
-        toast.error('삭제 중 오류가 발생했습니다.');
+        await deleteTopic(id);
+        await queryClient.invalidateQueries({
+          queryKey: QUERY_KEYS.drafts(user?.id),
+        });
+      } catch (e) {
+        console.error(e);
       }
     },
-    [queryClient, user?.id]
+    [queryClient, user]
   );
 
   // ------------------------------

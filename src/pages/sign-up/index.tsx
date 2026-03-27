@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Asterisk, ChevronRight } from 'lucide-react';
 
 import { useAuthStore } from '@/stores';
-import supabase from '@/lib/supabase';
+// ❌ supabase import 제거
 
 import {
   Button,
@@ -48,15 +48,19 @@ const formSchema = z
 // ------------------------------
 export default function SignUp() {
   const navigate = useNavigate();
-  const user = useAuthStore((state) => state.user); // setUser 삭제됨: 필요 없음
+  const user = useAuthStore((state) => state.user);
 
-  // --------------- form ---------------
+  // 🔥 추가
+  const signUp = useAuthStore((state) => state.signUp);
+  const loading = useAuthStore((state) => state.loading);
+
+  // form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: '', password: '', confirmPassword: '' },
   });
 
-  // --------------- 약관 체크박스 ---------------
+  // 체크박스 상태
   const [serviceAgreed, setServiceAgreed] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [marketingAgreed, setMarketingAgreed] = useState(false);
@@ -65,16 +69,12 @@ export default function SignUp() {
   const handleCheckPrivacy = useCallback(() => setPrivacyAgreed((prev) => !prev), []);
   const handleCheckMarketing = useCallback(() => setMarketingAgreed((prev) => !prev), []);
 
-  // ------------------------------
-  // 🔹 로그인 상태면 홈으로 이동
-  // ------------------------------
+  // 로그인 상태면 홈 이동
   useEffect(() => {
     if (user) navigate('/');
   }, [user, navigate]);
 
-  // ------------------------------
-  // 🔹 회원가입 처리
-  // ------------------------------
+  // 🔥 회원가입 처리 (store 사용)
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!serviceAgreed || !privacyAgreed) {
       toast.warning('필수 동의항목을 체크해주세요.');
@@ -82,36 +82,19 @@ export default function SignUp() {
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
-      });
+      const success = await signUp(
+        values.email,
+        values.password,
+        serviceAgreed,
+        privacyAgreed,
+        marketingAgreed
+      );
 
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
-
-      if (data.user) {
-        // 🔹 유저 테이블 업데이트 (약관 정보)
-        const { error: updateError } = await supabase
-          .from('user')
-          .update({
-            service_agreed: serviceAgreed,
-            privacy_agreed: privacyAgreed,
-            marketing_agreed: marketingAgreed,
-          })
-          .eq('id', data.user.id);
-
-        if (updateError) {
-          toast.error('약관 정보 저장 중 오류가 발생했습니다.');
-        }
-
-        // 🔹 signUp 후 자동 로그인되므로 명시적 로그아웃
-        await supabase.auth.signOut();
-
+      if (success) {
         toast.success('회원가입이 완료되었습니다! 로그인해주세요.');
         navigate('/sign-in', { state: { email: values.email } });
+      } else {
+        toast.error('회원가입에 실패했습니다.');
       }
     } catch (err) {
       console.error(err);
@@ -119,9 +102,6 @@ export default function SignUp() {
     }
   };
 
-  // ------------------------------
-  // 🔹 UI (절대 변경 X)
-  // ------------------------------
   return (
     <main className="w-full h-full min-h-[720px] flex items-center justify-center p-6 gap-6">
       <div className="w-full max-w-[400px] flex flex-col px-6 gap-6">
@@ -181,7 +161,6 @@ export default function SignUp() {
 
             {/* 약관 */}
             <section className="grid gap-2">
-              {/* 필수 */}
               <div className="grid gap-2">
                 <div className="flex items-center gap-1">
                   <Asterisk size={14} className="text-[#F96859]" />
@@ -223,7 +202,6 @@ export default function SignUp() {
 
               <Separator />
 
-              {/* 선택 */}
               <div className="grid gap-2">
                 <Label>선택 동의항목</Label>
                 <div className="flex items-center justify-between">
@@ -249,8 +227,13 @@ export default function SignUp() {
                 <Button type="button" variant="outline" size="icon">
                   <ArrowLeft />
                 </Button>
-                <Button type="submit" variant="outline" className="flex-1 !bg-sky-800/50">
-                  회원가입
+                <Button
+                  type="submit"
+                  variant="outline"
+                  className="flex-1 !bg-sky-800/50"
+                  disabled={loading}
+                >
+                  {loading ? '처리 중...' : '회원가입'}
                 </Button>
               </div>
 

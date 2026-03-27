@@ -3,166 +3,89 @@ import type { KeyboardEvent } from 'react';
 import { CircleUserRound, MessageSquareMore, ChevronsDown } from 'lucide-react';
 import { toast } from 'sonner';
 
-import supabase from '@/lib/supabase';
 import { Separator, Textarea, Button } from '@/components/ui';
 import { AppDeleteDialog } from '@/components/common';
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+
+import { QUERY_KEYS } from '@/constants/querykey.constant';
+
+// ✅ hook import
+import { useComments, useCommentsCount, useAddComment, useDeleteComment } from '@/hooks/useComment';
 
 export default function CommentBox({ topicId }: { topicId: number }) {
-  const queryClient = useQueryClient();
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const newCommentRef = useRef<HTMLTextAreaElement | null>(null);
 
   // ---------------------------------------------------------
-  // 🔥 로그인한 유저
+  // 🔥 로그인한 유저 (이건 나중에 분리 가능)
   // ---------------------------------------------------------
-  const fetchUser = async () => {
-    const { data } = await supabase.auth.getUser();
-    return data.user;
-  };
-
   const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: fetchUser,
+    queryKey: QUERY_KEYS.user.me,
+    queryFn: async () => {
+      const { data } = await import('@/lib/supabase').then((m) => m.default.auth.getUser());
+      return data.user;
+    },
     staleTime: Infinity,
   });
+
   const currentUser = user || null;
 
   // ---------------------------------------------------------
   // 🔥 댓글 총 개수 카운트
   // ---------------------------------------------------------
-  const { data: totalCount = 0 } = useQuery({
-    queryKey: ['commentCount', topicId],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('comment')
-        .select('*', { count: 'exact', head: true })
-        .eq('topic_id', topicId);
-
-      if (error) throw error;
-      return count ?? 0;
-    },
-    staleTime: 2000,
-  });
+  const { data: totalCount = 0 } = useCommentsCount(topicId);
 
   // ---------------------------------------------------------
   // 🔥 Infinite Query — 최신순 댓글 로드
   // ---------------------------------------------------------
-  const fetchComments = async ({ pageParam }: { pageParam: number }) => {
-    const from = pageParam;
-    const to = from + 5;
-
-    const { data, error } = await supabase
-      .from('comment_user_view')
-      .select('*')
-      .eq('topic_id', topicId)
-      .order('created_at', { ascending: false }) // ⭐ 최신순 정렬
-      .range(from, to);
-
-    if (error) throw error;
-
-    return {
-      comments: data,
-      nextOffset: data.length === 6 ? to + 1 : null,
-    };
-  };
-
-  const { data, fetchNextPage, hasNextPage, status } = useInfiniteQuery({
-    queryKey: ['comments', topicId],
-    queryFn: fetchComments,
-    getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
-    initialPageParam: 0,
-    staleTime: 0,
-  });
+  const { data, fetchNextPage, hasNextPage, status } = useComments(topicId);
 
   const comments = data?.pages.flatMap((page) => page.comments) ?? [];
 
   // ---------------------------------------------------------
-  // 🔥 댓글 작성 (중복 저장 문제 해결 포함)
+  // 🔥 댓글 작성
   // ---------------------------------------------------------
   const [preventDoubleSubmit, setPreventDoubleSubmit] = useState(false);
 
-  const addCommentMutation = useMutation({
-    mutationFn: async (text: string) => {
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData?.user;
-
-      if (!user) {
-        toast.error('로그인이 필요합니다.');
-        throw new Error('Not logged in');
-      }
-
-      const { data, error } = await supabase
-        .from('comment')
-        .insert({
-          content: text,
-          topic_id: topicId,
-          user_id: user.id,
-        })
-        .select('*')
-        .single();
-
-      if (error) throw error;
-
-      return { ...data, email: user.email };
-    },
-
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments', topicId] });
-      queryClient.invalidateQueries({ queryKey: ['commentCount', topicId] });
-
-      toast.success('댓글이 등록되었습니다.');
-      if (newCommentRef.current) newCommentRef.current.value = '';
-
-      setPreventDoubleSubmit(false);
-    },
-
-    onError: () => {
-      toast.error('댓글 등록 중 오류가 발생했습니다.');
-      setPreventDoubleSubmit(false);
-    },
-  });
+  const addCommentMutation = useAddComment(topicId);
 
   // ---------------------------------------------------------
-  // 🔥 Enter → 댓글 작성 (IME 한글 입력 보호 + 중복방지)
+  // 🔥 Enter → 댓글 작성
   // ---------------------------------------------------------
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.nativeEvent.isComposing) return; // ⭐ 한글 조합 중 Enter 방지
+    if (e.nativeEvent.isComposing) return;
 
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      e.stopPropagation(); // 버튼까지 이벤트 전파 방지
+      e.stopPropagation();
 
       const text = newCommentRef.current?.value?.trim();
       if (!text) return toast.warning('댓글 내용을 입력하세요.');
 
-      if (preventDoubleSubmit) return; // ⭐ 중복 방지
+      if (preventDoubleSubmit) return;
 
       setPreventDoubleSubmit(true);
-      addCommentMutation.mutate(text);
+      addCommentMutation.mutate(text, {
+        onSuccess: () => {
+          toast.success('댓글이 등록되었습니다.');
+          if (newCommentRef.current) newCommentRef.current.value = '';
+          setPreventDoubleSubmit(false);
+        },
+        onError: () => {
+          toast.error('댓글 등록 중 오류가 발생했습니다.');
+          setPreventDoubleSubmit(false);
+        },
+      });
     }
   };
 
   // ---------------------------------------------------------
   // 🔥 삭제
   // ---------------------------------------------------------
-  const deleteCommentMutation = useMutation({
-    mutationFn: async (commentId: number) => {
-      const { error } = await supabase.from('comment').delete().eq('id', commentId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['comments', topicId] });
-      queryClient.invalidateQueries({ queryKey: ['commentCount', topicId] });
-      toast.success('댓글이 삭제되었습니다.');
-    },
-    onError: () => {
-      toast.error('댓글 삭제 중 오류가 발생했습니다.');
-    },
-  });
+  const deleteCommentMutation = useDeleteComment(topicId);
 
   // ---------------------------------------------------------
-  // 🔥 무한 스크롤 옵저버
+  // 🔥 무한 스크롤
   // ---------------------------------------------------------
   const observerCallback = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -179,9 +102,7 @@ export default function CommentBox({ topicId }: { topicId: number }) {
     if (current) observer.observe(current);
 
     return () => {
-      if (current) {
-        observer.unobserve(current);
-      }
+      if (current) observer.unobserve(current);
     };
   }, [observerCallback]);
 
@@ -217,7 +138,18 @@ export default function CommentBox({ topicId }: { topicId: number }) {
               if (preventDoubleSubmit) return;
 
               setPreventDoubleSubmit(true);
-              addCommentMutation.mutate(text);
+
+              addCommentMutation.mutate(text, {
+                onSuccess: () => {
+                  toast.success('댓글이 등록되었습니다.');
+                  if (newCommentRef.current) newCommentRef.current.value = '';
+                  setPreventDoubleSubmit(false);
+                },
+                onError: () => {
+                  toast.error('댓글 등록 중 오류가 발생했습니다.');
+                  setPreventDoubleSubmit(false);
+                },
+              });
             }}
             disabled={addCommentMutation.isPending}
             className="bg-emerald-500 hover:bg-emerald-400 text-white rounded-lg shadow-md"

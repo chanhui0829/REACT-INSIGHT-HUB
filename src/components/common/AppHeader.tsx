@@ -48,7 +48,7 @@ function AppHeader() {
   }, [reset, navigate]);
 
   // ==========================================
-  // 🔥 UI 렌더링 (절대 변경 없음)
+  // 🔥 UI 렌더링
   // ==========================================
   return (
     <header className="fixed top-0 z-20 w-full flex items-center justify-center bg-[#111111]">

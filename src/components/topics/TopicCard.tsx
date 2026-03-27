@@ -12,7 +12,8 @@ import { CaseSensitive, Eye, Heart } from 'lucide-react';
 
 // types & utils
 import type { Topic } from '@/types/topic.type';
-import supabase from '@/lib/supabase';
+import { QUERY_KEYS } from '@/constants/querykey.constant';
+import { getUserNickname } from '@/services/user.service';
 
 dayjs.extend(relativeTime);
 dayjs.locale('ko');
@@ -45,18 +46,6 @@ function extractTextFromContent(content: string | [], maxChars = 200) {
 // ------------------------------
 // 🔹 유저 닉네임 조회
 // ------------------------------
-async function findUserById(id: string): Promise<string> {
-  try {
-    const { data, error } = await supabase.from('user').select('email').eq('id', id);
-
-    if (error) return '알 수 없는 사용자';
-    if (!data || data.length === 0) return '알 수 없는 사용자';
-
-    return data[0].email.split('@')[0] + '님';
-  } catch {
-    return '알 수 없는 사용자';
-  }
-}
 
 // ------------------------------
 // 🔹 TopicCard 컴포넌트
@@ -74,11 +63,10 @@ function TopicCardComponent({ props }: Props) {
 
   const previewText = useMemo(() => extractTextFromContent(props.content), [props.content]);
 
-  // 🔥 닉네임 Query
+  // 🔥 닉네임 Query (여기만 수정)
   const { data: nickname = '' } = useQuery({
-    queryKey: ['user', props.author],
-    queryFn: () => findUserById(props.author),
-    staleTime: Infinity,
+    queryKey: QUERY_KEYS.user.profile(props.author),
+    queryFn: () => getUserNickname(props.author),
   });
 
   return (

@@ -2,12 +2,9 @@ import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import { Funnel, NotebookPen, PencilLine, Search } from 'lucide-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 // Store & Utils
 import { useAuthStore } from '@/stores';
-import supabase from '@/lib/supabase';
-import { TOPIC_STATUS, type Topic } from '@/types/topic.type';
 import { SORT_CATEGORY } from '@/constants/sort.constant';
 
 // Components
@@ -30,48 +27,11 @@ import {
   SelectValue,
 } from '@/components/ui';
 
-type TopicsResponse = {
-  topics: Topic[];
-  total: number;
-};
-
-// =============================================================
-// 🔥 API - 쿼리 최적화
-// =============================================================
-
-async function fetchTopics(filters: {
-  category: string;
-  searchQuery: string;
-  sortOption: string;
-  startIndex: number;
-  endIndex: number;
-}): Promise<TopicsResponse> {
-  const { category, searchQuery, sortOption, startIndex, endIndex } = filters;
-
-  let query = supabase
-    .from('topic')
-    .select('*', { count: 'exact' })
-    .eq('status', TOPIC_STATUS.PUBLISH);
-
-  if (category !== 'all') query = query.eq('category', category);
-  if (searchQuery) {
-    query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
-  }
-
-  const orderBy =
-    sortOption === 'likes' ? 'likes' : sortOption === 'views' ? 'views' : 'created_at';
-
-  const { data, error, count } = await query
-    .order(orderBy, { ascending: false })
-    .range(startIndex, endIndex);
-
-  if (error) throw new Error(error.message);
-  return { topics: data ?? [], total: count ?? 0 };
-}
+// ✅ useTopic 하나로 통합 사용
+import { useTopicList, usePrefetchTopics } from '@/hooks/useTopic';
 
 function App() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -116,25 +76,14 @@ function App() {
     [category, searchQuery, sortOption, startIndex, endIndex]
   );
 
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['topics', category, searchQuery, sortOption, currentPage],
-    queryFn: () => fetchTopics(filters),
-    staleTime: 1000 * 60 * 5,
-    placeholderData: (prev) => prev,
-  });
+  // 🔥 hook 사용
+  const { data, isLoading, isFetching } = useTopicList(filters, currentPage);
 
-  // 🔥 Prefetch next page
+  const prefetchNext = usePrefetchTopics(filters, currentPage);
+
   useEffect(() => {
-    queryClient.prefetchQuery({
-      queryKey: ['topics', category, searchQuery, sortOption, currentPage + 1],
-      queryFn: () =>
-        fetchTopics({
-          ...filters,
-          startIndex: currentPage * ITEMS_PER_PAGE,
-          endIndex: currentPage * ITEMS_PER_PAGE + ITEMS_PER_PAGE - 1,
-        }),
-    });
-  }, [category, searchQuery, sortOption, currentPage]);
+    prefetchNext();
+  }, [prefetchNext]);
 
   const topics = data?.topics ?? [];
   const totalPages = Math.ceil((data?.total ?? 0) / ITEMS_PER_PAGE);

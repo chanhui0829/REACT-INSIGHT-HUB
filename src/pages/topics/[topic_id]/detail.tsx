@@ -1,4 +1,4 @@
-'use client';
+'use client'; //질문
 
 import { useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
@@ -6,166 +6,43 @@ import dayjs from 'dayjs';
 import { toast } from 'sonner';
 import { ArrowLeft, Eye, Heart } from 'lucide-react';
 
-import supabase from '@/lib/supabase';
 import { useAuthStore } from '@/stores';
 import { AppDeleteDialog, AppEditor } from '@/components/common';
 import { Button, Separator } from '@/components/ui';
 import CommentBox from './comment';
 
-import type { Topic } from '@/types/topic.type';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-type TopicLike = {
-  user_id: string;
-};
+// hook
+import {
+  useTopicDetail,
+  useTopicLikes,
+  useIncreaseViews,
+  useToggleLike,
+  useDeleteTopic,
+} from '@/hooks/useTopic';
 
 export default function TopicDetail() {
   const { id } = useParams();
   const topicId = Number(id);
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const queryClient = useQueryClient();
 
-  // ======================================================
-  // 🔥 1. 토픽 데이터 가져오기
-  // ======================================================
-  const { data: topic, isLoading } = useQuery<Topic | null>({
-    queryKey: ['topic', topicId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('topic').select('*').eq('id', topicId).single();
+  const { data: topic, isLoading } = useTopicDetail(topicId);
+  const { data: likesData = [] } = useTopicLikes(topicId);
+  const increaseViews = useIncreaseViews(topicId);
+  const toggleLike = useToggleLike(topicId, user?.id);
+  const deleteMutation = useDeleteTopic(topicId);
 
-      if (error) throw error;
-      return data as Topic;
-    },
-    enabled: !!topicId,
-  });
+  const isLiked = likesData.some((row) => row.user_id === user?.id);
 
-  // ======================================================
-  // 🔥 2. 조회수 +1 (Optimistic Update)
-  // ======================================================
-  const increaseViews = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.rpc('increment_topic_views', { topic_id: topicId });
-      if (error) throw error;
-      return data;
-    },
+  const isInitialLoading = isLoading && !topic;
 
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['topic', topicId] });
-
-      const prev = queryClient.getQueryData<Topic | null>(['topic', topicId]);
-
-      if (prev) {
-        queryClient.setQueryData(['topic', topicId], {
-          ...prev,
-          views: prev.views + 1,
-        });
-      }
-
-      return { prev };
-    },
-
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) {
-        queryClient.setQueryData(['topic', topicId], ctx.prev);
-      }
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['topic', topicId] });
-      queryClient.invalidateQueries({ queryKey: ['topics'] }); // 목록에도 반영
-    },
-  });
-
-  // 🔥 첫 렌더링 시 조회수 증가
   useEffect(() => {
     if (topicId) increaseViews.mutate();
   }, [topicId]);
 
-  // ======================================================
-  // 🔥 3. 좋아요 정보 가져오기 (isLiked 확인용)
-  // ======================================================
-  const { data: likesData = [] } = useQuery({
-    queryKey: ['topicLikes', topicId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('topic_likes')
-        .select('user_id')
-        .eq('topic_id', topicId);
-
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: !!topicId,
-  });
-
-  // ✅ topic.likes를 직접 사용하므로 별도의 count 로직은 삭제하고 isLiked 여부만 확인해!
-  const isLiked = likesData.some((row) => row.user_id === user?.id);
-
-  // ======================================================
-  // 🔥 4. 좋아요 토글
-  // ======================================================
-  const toggleLike = useMutation({
-    mutationFn: async () => {
-      if (!user) throw new Error('로그인이 필요합니다.');
-      const { data, error } = await supabase.rpc('toggle_topic_like', {
-        p_topic_id: topicId,
-      });
-      if (error) throw error;
-      return data;
-    },
-
-    // 🔥 핵심: 낙관적 업데이트
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['topic', topicId] });
-
-      const prevTopic = queryClient.getQueryData<Topic>(['topic', topicId]);
-      const prevLikes = queryClient.getQueryData<TopicLike[]>(['topicLikes', topicId]);
-
-      if (prevTopic) {
-        queryClient.setQueryData(['topic', topicId], {
-          ...prevTopic,
-          likes: isLiked ? prevTopic.likes - 1 : prevTopic.likes + 1,
-        });
-      }
-
-      if (prevLikes) {
-        queryClient.setQueryData(
-          ['topicLikes', topicId],
-          isLiked
-            ? prevLikes.filter((row) => row.user_id !== user?.id)
-            : [...prevLikes, { user_id: user?.id }]
-        );
-      }
-
-      return { prevTopic, prevLikes };
-    },
-
-    // 🔥 실패 시 롤백
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prevTopic) {
-        queryClient.setQueryData(['topic', topicId], ctx.prevTopic);
-      }
-      if (ctx?.prevLikes) {
-        queryClient.setQueryData(['topicLikes', topicId], ctx.prevLikes);
-      }
-      toast.error('좋아요 처리 중 오류가 발생했습니다.');
-    },
-
-    // 🔥 서버 동기화
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['topic', topicId] });
-      queryClient.invalidateQueries({ queryKey: ['topics'] });
-    },
-  });
-
-  // ======================================================
-  // 🔥 5. 삭제 기능
-  // ======================================================
   const handleDelete = useCallback(async () => {
     try {
-      const { error } = await supabase.from('topic').delete().eq('id', topicId);
-      if (error) throw error;
+      await deleteMutation.mutateAsync();
 
       toast.success('토픽이 삭제되었습니다.');
       navigate('/');
@@ -173,12 +50,9 @@ export default function TopicDetail() {
       console.error(err);
       toast.error('토픽 삭제 중 오류가 발생했습니다.');
     }
-  }, [topicId, navigate]);
+  }, [deleteMutation, navigate]);
 
-  // ======================================================
-  // 🔥 로딩 처리
-  // ======================================================
-  if (isLoading) {
+  if (isInitialLoading) {
     return (
       <div className="flex justify-center items-center min-h-[500px] text-zinc-400">
         토픽 정보를 불러오는 중입니다...
@@ -194,9 +68,6 @@ export default function TopicDetail() {
     );
   }
 
-  // ======================================================
-  // 🔥 렌더링
-  // ======================================================
   return (
     <main className="w-full min-h-[720px] flex flex-col">
       {/* ============================ */}
@@ -241,25 +112,17 @@ export default function TopicDetail() {
         </span>
       </section>
 
-      {/* ============================ */}
-      {/* 본문 */}
-      {/* ============================ */}
       <div className="w-full py-10">
         <AppEditor value={JSON.parse(topic.content)} readonly />
       </div>
 
-      {/* ============================ */}
-      {/* 좋아요 & 조회수 */}
-      {/* ============================ */}
       <div className="p-4">
         <div className="flex gap-4 mt-4 items-center justify-end text-[16px] pr-6">
-          {/* 조회수 */}
           <div className="flex items-center gap-1.5 text-gray-200">
             <Eye size={22} />
             <span>{topic.views}</span>
           </div>
 
-          {/* 좋아요 */}
           <button
             disabled={toggleLike.isPending}
             className={`flex items-center gap-1.5 transition cursor-pointer ${
@@ -268,7 +131,6 @@ export default function TopicDetail() {
             onClick={() => toggleLike.mutate()}
           >
             <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
-            {/* ✅ topic.likes 값을 직접 렌더링하도록 수정했어! */}
             <span>{topic.likes}</span>
           </button>
         </div>
@@ -276,9 +138,6 @@ export default function TopicDetail() {
 
       <Separator />
 
-      {/* ============================ */}
-      {/* 댓글 */}
-      {/* ============================ */}
       <div className="relative bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950">
         <div className="z-10 flex justify-center gap-3 px-0 py-8 items-start">
           <section className="flex-1 max-w-4xl">

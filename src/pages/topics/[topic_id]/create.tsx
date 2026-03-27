@@ -2,12 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { nanoid } from 'nanoid';
 import { toast } from 'sonner';
 import { ArrowLeft, Asterisk, BookOpenCheck, ImageOff, Save } from 'lucide-react';
 
-import supabase from '@/lib/supabase';
 import { useAuthStore } from '@/stores';
+
+// 🔥 추가
+import { QUERY_KEYS } from '@/constants/querykey.constant';
+
+// ✅ hook 사용
+import { useSaveTopic, usePublishTopic } from '@/hooks/useCreateTopic';
 
 import { AppEditor, AppFileUpload } from '@/components/common';
 import {
@@ -24,10 +28,11 @@ import {
 } from '@/components/ui';
 
 import { TOPIC_CATEGORY } from '@/constants/category.constant';
-import { TOPIC_STATUS, type Topic } from '@/types/topic.type';
+import { type Topic } from '@/types/topic.type';
 import type { Block } from '@blocknote/core';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTopicById } from '@/services/topic.service';
 
 // ================================================
 // 🔥 TopicInsertWithoutAuthor 타입
@@ -35,46 +40,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 type TopicInsertWithoutAuthor = Omit<Topic, 'id' | 'created_at' | 'author' | 'views' | 'likes'>;
 
 // ================================================
-// 🔥 Supabase : fetch
-// ================================================
-async function fetchTopicById(id?: string): Promise<Topic | null> {
-  if (!id) return null;
-
-  const { data, error } = await supabase.from('topic').select('*').eq('id', id).single();
-
-  if (error) throw error;
-  return data as Topic;
-}
-
-// ================================================
-// 🔥 Supabase : INSERT (id 반환)
-// ================================================
-async function insertTopic(userId: string, payload: TopicInsertWithoutAuthor) {
-  const { data, error } = await supabase
-    .from('topic')
-    .insert([{ ...payload, author: userId }])
-    .select('id')
-    .single();
-
-  if (error) throw error;
-  return data.id as number;
-}
-
-// ================================================
-// 🔥 Supabase : UPDATE
-// ================================================
-async function updateTopic(id: string, payload: TopicInsertWithoutAuthor) {
-  const { error } = await supabase.from('topic').update(payload).eq('id', id);
-  if (error) throw error;
-}
-
-// ================================================
 // 🔥 Component
 // ================================================
 export default function CreateTopic() {
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { id } = useParams();
 
   const [title, setTitle] = useState('');
@@ -82,11 +52,14 @@ export default function CreateTopic() {
   const [category, setCategory] = useState('');
   const [thumbnail, setThumbnail] = useState<File | string | null>(null);
 
+  const saveMutation = useSaveTopic();
+  const publishMutation = usePublishTopic();
+
   // ================================================
   // 🔥 useQuery — 수정모드 데이터 로드
   // ================================================
   const { data: topic } = useQuery({
-    queryKey: ['topic', id],
+    queryKey: id ? QUERY_KEYS.topics.detail(Number(id)) : ['topic', 'create'],
     queryFn: () => fetchTopicById(id),
     enabled: !!id,
   });
@@ -102,28 +75,6 @@ export default function CreateTopic() {
     setCategory(topic.category || '');
     setThumbnail(topic.thumbnail || null);
   }, [topic]);
-
-  // ================================================
-  // 🔥 썸네일 업로드 (useCallback 메모이징)
-  // ================================================
-  const uploadThumbnail = useCallback(async () => {
-    if (!thumbnail) return null;
-
-    if (thumbnail instanceof File) {
-      const ext = thumbnail.name.split('.').pop();
-      const fileName = `${nanoid()}.${ext}`;
-      const filePath = `topics/${fileName}`;
-
-      const { error } = await supabase.storage.from('files').upload(filePath, thumbnail);
-
-      if (error) throw error;
-
-      const { data } = supabase.storage.from('files').getPublicUrl(filePath);
-      return data.publicUrl;
-    }
-
-    return typeof thumbnail === 'string' ? thumbnail : null;
-  }, [thumbnail]);
 
   // ================================================
   // 🔥 payload 생성 함수 (중복 제거)
@@ -149,37 +100,20 @@ export default function CreateTopic() {
     }
 
     try {
-      const thumbnailUrl = await uploadThumbnail();
-      const payload = buildPayload(TOPIC_STATUS.TEMP, thumbnailUrl);
+      await saveMutation.mutateAsync({
+        id,
+        userId: user!.id,
+        buildPayload,
+        thumbnail,
+      });
 
-      if (!id) {
-        await insertTopic(user!.id, payload);
-        toast.success('임시 저장 완료!');
-        navigate('/');
-      } else {
-        await updateTopic(id, payload);
-        toast.success('임시 저장 완료!');
-      }
-
-      // ✅ 임시 저장 목록 쿼리 무효화 (메인 페이지 빨간 점 업데이트용)
-      await queryClient.invalidateQueries({ queryKey: ['drafts', user?.id] });
-      await queryClient.invalidateQueries({ queryKey: ['topics'] });
+      toast.success('임시 저장 완료!');
+      navigate('/');
     } catch (err) {
       console.error(err);
       toast.error('저장 중 오류가 발생했습니다.');
     }
-  }, [
-    title,
-    content,
-    category,
-    thumbnail,
-    uploadThumbnail,
-    buildPayload,
-    id,
-    user,
-    navigate,
-    queryClient,
-  ]);
+  }, [title, content, category, thumbnail, id, user, navigate, saveMutation]);
 
   // ================================================
   // 🔥 발행 버튼 (PUBLISH)
@@ -191,38 +125,21 @@ export default function CreateTopic() {
     }
 
     try {
-      const thumbnailUrl = await uploadThumbnail();
-      const payload = buildPayload(TOPIC_STATUS.PUBLISH, thumbnailUrl);
-
-      if (!id) {
-        await insertTopic(user!.id, payload);
-      } else {
-        await updateTopic(id, payload);
-      }
+      await publishMutation.mutateAsync({
+        id,
+        userId: user!.id,
+        buildPayload,
+        thumbnail,
+      });
 
       toast.success('토픽이 발행되었습니다!');
-
-      // ✅ 발행 시에도 쿼리 무효화
-      await queryClient.invalidateQueries({ queryKey: ['drafts', user?.id] });
-      await queryClient.invalidateQueries({ queryKey: ['topics'] });
 
       navigate('/');
     } catch (err) {
       console.error(err);
       toast.error('발행 중 오류가 발생했습니다.');
     }
-  }, [
-    title,
-    content,
-    category,
-    thumbnail,
-    uploadThumbnail,
-    buildPayload,
-    id,
-    user,
-    navigate,
-    queryClient,
-  ]);
+  }, [title, content, category, thumbnail, id, user, navigate, publishMutation]);
 
   // ================================================
   // 🔥 렌더링
@@ -251,7 +168,6 @@ export default function CreateTopic() {
           <span className="text-base font-semibold">토픽 작성하기</span>
         </div>
 
-        {/* 제목 */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-1">
             <Asterisk size={14} className="text-[#F96859]" />
@@ -262,11 +178,10 @@ export default function CreateTopic() {
             placeholder="토픽 제목을 입력하세요."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="h-16 pl-6 !text-lg placeholder:text-lg placeholder:font-semibold border-0 !bg-zinc-900"
+            className="h-16 pl-6 text-lg placeholder:text-lg placeholder:font-semibold border-0 bg-zinc-900"
           />
         </div>
 
-        {/* 본문 */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-1">
             <Asterisk size={14} className="text-[#F96859]" />
@@ -277,14 +192,12 @@ export default function CreateTopic() {
         </div>
       </section>
 
-      {/* Step 02 */}
       <section className="w-full lg:w-1/4 flex flex-col gap-6">
         <div className="flex flex-col pb-6 border-b">
           <span className="text-[#F96859] font-semibold">Step 02</span>
           <span className="text-base font-semibold">카테고리 및 썸네일 등록</span>
         </div>
 
-        {/* 카테고리 */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-1">
             <Asterisk size={14} className="text-[#F96859]" />
@@ -292,7 +205,7 @@ export default function CreateTopic() {
           </div>
 
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="w-full !bg-input/30">
+            <SelectTrigger className="w-full bg-input/30">
               <SelectValue placeholder="카테고리 선택" />
             </SelectTrigger>
 
@@ -309,7 +222,6 @@ export default function CreateTopic() {
           </Select>
         </div>
 
-        {/* 썸네일 */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-1">
             <Asterisk size={14} className="text-[#F96859]" />

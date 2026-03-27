@@ -1,9 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import supabase from '@/lib/supabase';
 
-// ------------------------------
-// 🔹 User 타입 정의
+// 🔥 추가
+import {
+  signInService,
+  signUpService,
+  signOutService,
+  updateUserAgreement,
+} from '@/services/authService';
+
 // ------------------------------
 export interface User {
   id: string;
@@ -11,42 +16,100 @@ export interface User {
   role: string;
 }
 
-// ------------------------------
-// 🔹 AuthStore 인터페이스
-// ------------------------------
 interface AuthStore {
   user: User | null;
+  loading: boolean;
+  error: string | null;
+
   setUser: (newUser: User | null) => void;
   reset: () => Promise<void>;
+
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    serviceAgreed: boolean,
+    privacyAgreed: boolean,
+    marketingAgreed: boolean
+  ) => Promise<boolean>;
 }
 
-// ------------------------------
-// 🔥 최적화된 Zustand AuthStore
-// ------------------------------
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set) => ({
       user: null,
+      loading: false,
+      error: null,
 
-      // 🔹 불필요한 리렌더 줄이기 위해 newUser 그대로 적용
       setUser: (newUser: User | null) => set({ user: newUser }),
 
-      // 🔥 Supabase + Zustand 완전 초기화 (persist와 충돌 없음)
       reset: async () => {
         try {
-          await supabase.auth.signOut();
+          await signOutService();
         } catch {
-          console.warn('Supabase signOut 실패(네트워크 문제 등)');
+          console.warn('signOut 실패');
+        }
+        set({ user: null });
+      },
+
+      login: async (email, password) => {
+        set({ loading: true, error: null });
+
+        const { data, error } = await signInService(email, password);
+
+        if (error || !data.user) {
+          set({ error: error?.message || '로그인 실패', loading: false });
+          return false;
         }
 
-        // 👉 상태 초기화 (persist 미들웨어가 자동으로 localStorage 업데이트 처리함)
+        set({
+          user: {
+            id: data.user.id,
+            email: data.user.email ?? '',
+            role: 'user',
+          },
+          loading: false,
+        });
+
+        return true;
+      },
+
+      signUp: async (email, password, serviceAgreed, privacyAgreed, marketingAgreed) => {
+        set({ loading: true, error: null });
+
+        const { data, error } = await signUpService(email, password);
+
+        if (error || !data.user) {
+          set({ error: error?.message || '회원가입 실패', loading: false });
+          return false;
+        }
+
+        const { error: updateError } = await updateUserAgreement(
+          data.user.id,
+          serviceAgreed,
+          privacyAgreed,
+          marketingAgreed
+        );
+
+        if (updateError) {
+          set({ loading: false });
+          return false;
+        }
+
+        await signOutService();
+
+        set({ loading: false });
+        return true;
+      },
+
+      logout: async () => {
+        await signOutService();
         set({ user: null });
       },
     }),
     {
       name: 'auth-storage',
-
-      // 🔥 user만 저장해서 성능 최적화
       partialize: (state) => ({ user: state.user }),
     }
   )
