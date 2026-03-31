@@ -71,24 +71,31 @@ function TopicCardComponent({ props }: Props) {
 
   return (
     <Card
-      className="w-full h-fit p-4 gap-4 cursor-pointer hover:scale-[1.01] transition-all duration-200"
+      className="w-full h-60 p-4 gap-4 cursor-pointer hover:scale-[1.01] transition-all duration-200 flex flex-col"
       onClick={handleNavigate}
     >
       {/* 상단 */}
-      <div className="flex items-start gap-4">
-        <div className="flex-1 flex flex-col items-start gap-4">
-          <h3 className="h-16 text-base font-semibold tracking-tight line-clamp-2 flex flex-col items-start gap-2">
-            <CaseSensitive size={16} className="text-muted-foreground mt-[3px]" />
-            <span>{props.title}</span>
-          </h3>
-          <p className="line-clamp-3 text-muted-foreground text-sm leading-relaxed">
-            {previewText}
-          </p>
+      <div className="flex items-start gap-4 flex-1">
+        {/* 왼쪽 텍스트 영역 */}
+        <div className="flex-1 flex flex-col justify-between">
+          <div className="flex flex-col gap-2">
+            <CaseSensitive size={16} className="text-muted-foreground shrink-0" />
+
+            <h3 className="text-base font-semibold tracking-tight line-clamp-2 leading-snug">
+              {props.title}
+            </h3>
+
+            <p className="line-clamp-3 text-muted-foreground text-sm leading-relaxed">
+              {previewText}
+            </p>
+          </div>
         </div>
+
+        {/* 이미지 */}
         <img
           src={props.thumbnail ?? '/assets/default-thumbnail.png'}
           alt="@THUMBNAIL"
-          className="w-[140px] h-[140px] aspect-square rounded-lg object-cover"
+          className="w-[140px] h-[140px] aspect-square rounded-lg object-cover shrink-0"
         />
       </div>
 
@@ -97,7 +104,7 @@ function TopicCardComponent({ props }: Props) {
       {/* 하단 */}
       <div className="w-full flex justify-between items-start text-sm">
         <div className="flex flex-col text-gray-400">
-          <p className="font-semibold text-white mb-0.5">{nickname}</p>
+          <p className="font-semibold text-white ">{nickname}</p>
           <p className="text-gray-500 text-xs">{props.category}</p>
         </div>
 
@@ -107,7 +114,7 @@ function TopicCardComponent({ props }: Props) {
               <Eye size={14} className="text-gray-400" />
               <span>{props.views}</span>
             </p>
-            <Separator orientation="vertical" className="!h-4" />
+            <Separator orientation="vertical" className="h-4" />
             <p className="flex items-center gap-1">
               <Heart color="#ef4444" fill="#ef4444" size={14} />
               <span>{props.likes}</span>

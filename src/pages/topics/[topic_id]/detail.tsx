@@ -74,7 +74,7 @@ export default function TopicDetail() {
       {/* 썸네일 */}
       {/* ============================ */}
       <div
-        className="relative w-full h-60 md:h-100 bg-cover bg-[50%_35%] bg-accent"
+        className="relative w-full h-60 md:h-100 bg-cover bg-position-[50%_35%] bg-accent"
         style={{ backgroundImage: `url(${topic.thumbnail})` }}
       >
         <div className="absolute top-6 left-6 z-10 flex items-center gap-2 mt-5">
@@ -91,9 +91,9 @@ export default function TopicDetail() {
           )}
         </div>
 
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-l from-[#0a0a0a] via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-r from-[#0a0a0a] via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-[#0a0a0a] via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-l from-[#0a0a0a] via-transparent to-transparent" />
       </div>
 
       {/* ============================ */}
@@ -105,7 +105,7 @@ export default function TopicDetail() {
           {topic.title}
         </h1>
 
-        <Separator className="!w-6 my-6 bg-foreground" />
+        <Separator className="w-6! my-6 bg-foreground" />
 
         <span className="text-sm text-zinc-500">
           {dayjs(topic.created_at).format('YYYY.MM.DD')}
@@ -138,7 +138,7 @@ export default function TopicDetail() {
 
       <Separator />
 
-      <div className="relative bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950">
+      <div className="relative bg-linear-to-b from-zinc-950 via-zinc-900 to-zinc-950">
         <div className="z-10 flex justify-center gap-3 px-0 py-8 items-start">
           <section className="flex-1 max-w-4xl">
             <CommentBox topicId={topicId} />

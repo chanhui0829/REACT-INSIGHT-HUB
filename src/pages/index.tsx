@@ -121,22 +121,25 @@ function App() {
     const end = Math.min(totalPages, currentPage + 2);
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }, [currentPage, totalPages]);
-
   return (
-    <main className="w-full min-h-screen flex flex-col lg:flex-row p-6 gap-6 mt-2 items-start">
-      <div className="lg:hidden w-full mb-2 sticky z-30">
+    <main className="w-full flex flex-col lg:flex-row gap-8 items-start mt-16 ">
+      {/* 모바일 사이드바 */}
+      <div className="lg:hidden w-full sticky top-20 z-30">
         <AppSidebar category={category} setCategory={handleCategoryChange} />
       </div>
 
-      <aside className="hidden lg:block lg:w-64 lg:shrink-0 sticky top-24">
+      {/* 데스크탑 사이드바 */}
+      <aside className="hidden lg:block w-64 shrink-0 sticky top-24">
         <AppSidebar category={category} setCategory={handleCategoryChange} />
       </aside>
 
-      <section className="w-full flex-1 min-w-0 flex flex-col gap-12 lg:mr-2">
-        <div className="fixed flex gap-2 right-1/2 bottom-10 translate-x-1/2 z-40 items-center">
+      {/* 메인 영역 */}
+      <section className="flex-1 min-w-0 flex flex-col gap-10">
+        {/* Floating 버튼 */}
+        <div className="fixed right-1/2 bottom-10 translate-x-1/2 z-40 flex gap-2 items-center">
           <Button
             variant="destructive"
-            className="!py-5 !px-6 rounded-full hover:scale-110 transition shadow-lg"
+            className="rounded-full px-4! py-4! shadow-lg hover:scale-105 transition"
             onClick={handleRoute}
           >
             <PencilLine />
@@ -147,84 +150,105 @@ function App() {
             <Button
               variant="outline"
               size="icon"
-              className="rounded-full w-10 h-10 p-0 border-2 border-zinc-700 bg-zinc-800"
+              className="rounded-full w-10 h-10 border bg-muted hover:scale-115 transition"
             >
-              <NotebookPen className="w-6 h-6" />
+              <NotebookPen className="w-5 h-5" />
             </Button>
           </AppDraftsDialog>
         </div>
 
-        <header className="flex flex-col gap-1 justify-center items-center">
-          <div className="flex items-center gap-4">
-            <img src="/assets/gifs/gif-002.gif" className="w-14 h-14" alt="insight-gif" />
-            <h1 className="text-2xl md:text-3xl font-semibold text-center mt-4">
-              지식과 인사이트를 모아, <br />
-              토픽으로 깊이 있게 나누세요!
+        {/* header */}
+        <header className="w-full flex justify-center py-2">
+          <div className="flex flex-col items-center text-center gap-4 max-w-2xl">
+            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+              <img src="/assets/gifs/gif-002.gif" className="w-10 h-10" alt="insight-gif" />
+            </div>
+
+            <h1 className="text-2xl md:text-3xl font-semibold leading-snug tracking-tight">
+              지식과 인사이트를 모아
+              <br />
+              <span className="text-emerald-400">더 깊이 있는 토픽</span>으로 나누세요
             </h1>
+
+            <p className="text-zinc-400 text-xs md:text-sm">
+              생각을 기록하고, 경험을 공유하며 인사이트를 만들어보세요.
+            </p>
           </div>
         </header>
 
-        <div className="flex justify-center w-full mb-10 px-2">
-          <div className="relative w-full max-w-2xl">
-            <div className="flex items-center rounded-full border border-zinc-700 bg-black overflow-hidden focus-within:ring-2 focus-within:ring-zinc-500">
-              <Search className="ml-5 text-zinc-400 shrink-0" />
+        {/* 검색 */}
+        <div className="w-full flex justify-center">
+          <div className="w-full max-w-2xl">
+            <div
+              className="flex items-center h-14 px-5 gap-2 rounded-full border border-zinc-700 bg-black/40 backdrop-blur-md
+                          transition-all focus-within:border-zinc-500"
+            >
+              <Search className="w-5 h-5 text-zinc-400 shrink-0" />
+
               <Input
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="토픽 제목 또는 내용을 입력하세요."
-                className="flex-1 h-14 border-none text-zinc-100 focus-visible:ring-0"
+                placeholder="관심 있는 클래스, 토픽 주제를 검색하세요."
+                className="flex-1 h-full border-none bg-transparent
+                text-lg! text-zinc-200  placeholder:text-zinc-500
+        focus-visible:ring-0 mr-2"
               />
+
               <Button
                 onClick={handleSearch}
-                className="h-14 bg-zinc-800 hover:bg-zinc-700 text-white rounded-none px-6 shrink-0"
+                className="h-10 px-5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium shadow-inner"
               >
                 검색
               </Button>
             </div>
           </div>
         </div>
+        {/* 정렬 */}
+        <div className="flex justify-end">
+          <div className="flex items-center gap-2">
+            <Funnel size={14} className="text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">정렬</p>
 
-        <div className="w-full flex flex-col gap-6">
-          <div className="flex w-full justify-end px-2">
-            <div className="flex items-center gap-3">
-              <div className="flex gap-1.5 items-center">
-                <Funnel size={15} className="text-zinc-400" />
-                <p className="text-xs text-zinc-400">정렬 기준</p>
-              </div>
-              <Select
-                value={sortOption}
-                onValueChange={(v) => {
-                  setSortOption(v);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="w-40 border-zinc-700">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {SORT_CATEGORY.map((item) => (
-                      <SelectItem key={item.id} value={item.sortOption}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select
+              value={sortOption}
+              onValueChange={(v) => {
+                setSortOption(v);
+                setCurrentPage(1);
+              }}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectGroup>
+                  {SORT_CATEGORY.map((item) => (
+                    <SelectItem key={item.id} value={item.sortOption}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
+        </div>
 
+        {/* 리스트 */}
+        <div className="w-full flex flex-col gap-6">
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-40 rounded-xl bg-zinc-800 animate-pulse" />
+                <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />
               ))}
             </div>
           ) : topics.length > 0 ? (
             <>
-              {isFetching && <p className="text-center text-xs text-zinc-500">업데이트 중...</p>}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-2">
+              {isFetching && (
+                <p className="text-center text-xs text-muted-foreground">업데이트 중...</p>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {topics.map((topic) => (
                   <TopicCard key={topic.id} props={topic} />
                 ))}
@@ -239,8 +263,9 @@ function App() {
           )}
         </div>
 
+        {/* 페이지네이션 */}
         {totalPages > 1 && (
-          <Pagination className="mb-20">
+          <Pagination className="mt-6 mb-10">
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
@@ -251,6 +276,7 @@ function App() {
                   }}
                 />
               </PaginationItem>
+
               {visiblePages.map((page) => (
                 <PaginationItem key={page}>
                   <PaginationLink
@@ -265,6 +291,7 @@ function App() {
                   </PaginationLink>
                 </PaginationItem>
               ))}
+
               <PaginationItem>
                 <PaginationNext
                   href="#"

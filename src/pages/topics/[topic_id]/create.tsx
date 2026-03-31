@@ -145,32 +145,41 @@ export default function CreateTopic() {
   // 🔥 렌더링
   // ================================================
   return (
-    <main className="w-full min-h-[1024px] flex flex-col lg:flex-row gap-6 p-4 sm:p-6">
+    <main className="w-full flex flex-col lg:flex-row gap-8 pt-16">
       {/* Floating 버튼 */}
       <div className="fixed right-1/2 bottom-10 translate-x-1/2 z-20 flex items-center gap-2">
         <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft />
         </Button>
 
-        <Button variant="outline" className="w-22 !bg-yellow-800/50" onClick={handleSave}>
-          <Save /> 저장
+        <Button
+          variant="outline"
+          className="bg-yellow-800/40! hover:bg-yellow-800/60!"
+          onClick={handleSave}
+        >
+          <Save className="mr-1" /> 저장
         </Button>
 
-        <Button variant="outline" className="w-22 !bg-emerald-800/50" onClick={handlePublish}>
-          <BookOpenCheck /> 발행
+        <Button
+          variant="outline"
+          className="bg-emerald-800/40! hover:bg-emerald-800/60!"
+          onClick={handlePublish}
+        >
+          <BookOpenCheck className="mr-1" /> 발행
         </Button>
       </div>
 
-      {/* Step 01 */}
-      <section className="w-full lg:w-3/4 flex flex-col gap-6">
-        <div className="flex flex-col pb-6 border-b">
-          <span className="text-[#F96859] font-semibold">Step 01</span>
-          <span className="text-base font-semibold">토픽 작성하기</span>
+      {/* LEFT */}
+      <section className="flex-1 flex flex-col gap-8">
+        <div className="pb-6 border-b space-y-1">
+          <span className="text-sm text-orange-500 font-semibold">Step 01</span>
+          <h2 className="text-lg font-semibold">토픽 작성하기</h2>
         </div>
 
-        <div className="flex flex-col gap-2">
+        {/* 제목 */}
+        <div className="space-y-2">
           <div className="flex items-center gap-1">
-            <Asterisk size={14} className="text-[#F96859]" />
+            <Asterisk size={14} className="text-destructive" />
             <Label className="text-muted-foreground">제목</Label>
           </div>
 
@@ -178,13 +187,14 @@ export default function CreateTopic() {
             placeholder="토픽 제목을 입력하세요."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="h-16 pl-6 text-lg placeholder:text-lg placeholder:font-semibold border-0 bg-zinc-900"
+            className="h-14 text-lg bg-muted border border-border rounded-lg"
           />
         </div>
 
-        <div className="flex flex-col gap-2">
+        {/* 본문 */}
+        <div className="space-y-2">
           <div className="flex items-center gap-1">
-            <Asterisk size={14} className="text-[#F96859]" />
+            <Asterisk size={14} className="text-destructive" />
             <Label className="text-muted-foreground">본문</Label>
           </div>
 
@@ -192,20 +202,22 @@ export default function CreateTopic() {
         </div>
       </section>
 
-      <section className="w-full lg:w-1/4 flex flex-col gap-6">
-        <div className="flex flex-col pb-6 border-b">
-          <span className="text-[#F96859] font-semibold">Step 02</span>
-          <span className="text-base font-semibold">카테고리 및 썸네일 등록</span>
+      {/* RIGHT */}
+      <aside className="w-full lg:w-[320px] flex flex-col gap-8">
+        <div className="pb-6 border-b space-y-1">
+          <span className="text-sm text-orange-500 font-semibold">Step 02</span>
+          <h2 className="text-lg font-semibold">설정</h2>
         </div>
 
-        <div className="flex flex-col gap-2">
+        {/* 카테고리 */}
+        <div className="space-y-2">
           <div className="flex items-center gap-1">
-            <Asterisk size={14} className="text-[#F96859]" />
+            <Asterisk size={14} className="text-destructive" />
             <Label className="text-muted-foreground">카테고리</Label>
           </div>
 
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="w-full bg-input/30">
+            <SelectTrigger className="w-full bg-muted border border-border rounded-lg">
               <SelectValue placeholder="카테고리 선택" />
             </SelectTrigger>
 
@@ -222,19 +234,24 @@ export default function CreateTopic() {
           </Select>
         </div>
 
-        <div className="flex flex-col gap-2">
+        {/* 썸네일 */}
+        <div className="space-y-2">
           <div className="flex items-center gap-1">
-            <Asterisk size={14} className="text-[#F96859]" />
+            <Asterisk size={14} className="text-destructive" />
             <Label className="text-muted-foreground">썸네일</Label>
           </div>
 
           <AppFileUpload file={thumbnail} onChange={setThumbnail} />
 
-          <Button variant="outline" className="border-0" onClick={() => setThumbnail(null)}>
-            <ImageOff /> 썸네일 제거
+          <Button
+            variant="outline"
+            className="w-full justify-center"
+            onClick={() => setThumbnail(null)}
+          >
+            <ImageOff className="mr-2" /> 썸네일 제거
           </Button>
         </div>
-      </section>
+      </aside>
     </main>
   );
 }

@@ -51,21 +51,30 @@ function AppHeader() {
   // 🔥 UI 렌더링
   // ==========================================
   return (
-    <header className="fixed top-0 z-20 w-full flex items-center justify-center bg-[#111111]">
-      <div className="w-full max-w-[1328px] flex items-center justify-between px-6 py-2">
+    <header
+      className="fixed top-0 z-50 w-full flex items-center justify-center bg-black/70 backdrop-blur-md border-b border-white/10 
+shadow-[0_4px_20px_rgba(0,0,0,0.6)]"
+    >
+      <div className="w-full max-w-[1328px] flex items-center justify-between px-4 py-2">
         {/* 로고 + 네비 */}
-        <div className="flex items-center gap-5">
-          <img src="/assets/icons/chan.png" alt="@LOGO" className="w-18 h-12 object-contain" />
-          <nav className="flex items-center gap-5">
-            <NavLink to="/" className="font-semibold">
-              토픽 인사이트
-            </NavLink>
-          </nav>
+        <div className="flex items-center gap-3">
+          <img
+            src="/assets/icons/insight-hub.svg"
+            alt="Insight Hub"
+            className="h-12 object-contain"
+          />
+
+          <NavLink
+            to="/"
+            className="font-semibold text-base text-zinc-300 hover:text-emerald-300 transition "
+          >
+            토픽 탐색
+          </NavLink>
         </div>
 
         {/* 우측 사용자 메뉴 */}
         {user ? (
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-5 font-semibold text-md">
             <div className="flex items-center gap-1">
               <CircleUserRound size={16} className="m-0.5" />
               <span>{user.email}님</span>
@@ -81,7 +90,7 @@ function AppHeader() {
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 font-semibold text-md">
             <NavLink to="/sign-in" className="hover:scale-110 transition-all duration-150">
               로그인
             </NavLink>
