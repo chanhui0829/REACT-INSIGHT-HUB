@@ -1,4 +1,4 @@
-'use client'; //질문
+'use client';
 
 import { useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router';

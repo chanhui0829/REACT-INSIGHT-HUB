@@ -19,6 +19,7 @@ import SignIn from '@/pages/sign-in';
 import AuthCallback from '@/pages/auth/callback';
 import CreateTopic from '@/pages/topics/[topic_id]/create';
 import TopicDetail from '@/pages/topics/[topic_id]/detail';
+import CaseStudy from '@/pages/case-study';
 import ScrollToTop from './components/common/ScrollToTop';
 
 const queryClient = new QueryClient({
@@ -48,6 +49,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 <Route path="create/:id" element={<CreateTopic />} />
                 <Route path=":id/detail" element={<TopicDetail />} />
               </Route>
+              <Route path="case-study" element={<CaseStudy />} />
             </Route>
           </Routes>
         </BrowserRouter>

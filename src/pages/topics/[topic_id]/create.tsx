@@ -7,9 +7,6 @@ import { ArrowLeft, Asterisk, BookOpenCheck, ImageOff, Save } from 'lucide-react
 
 import { useAuthStore } from '@/stores';
 
-// 🔥 추가
-import { QUERY_KEYS } from '@/constants/querykey.constant';
-
 // ✅ hook 사용
 import { useSaveTopic, usePublishTopic } from '@/hooks/useCreateTopic';
 
@@ -28,6 +25,8 @@ import {
 } from '@/components/ui';
 
 import { TOPIC_CATEGORY } from '@/constants/category.constant';
+import { QUERY_KEYS } from '@/constants/querykey.constant';
+
 import { type Topic } from '@/types/topic.type';
 import type { Block } from '@blocknote/core';
 

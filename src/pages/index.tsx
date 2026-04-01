@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui';
 
-// ✅ useTopic 하나로 통합 사용
+// useTopic 하나로 통합 사용
 import { useTopicList, usePrefetchTopics } from '@/hooks/useTopic';
 
 function App() {
@@ -175,13 +175,12 @@ function App() {
             </p>
           </div>
         </header>
-
         {/* 검색 */}
         <div className="w-full flex justify-center">
           <div className="w-full max-w-2xl">
             <div
-              className="flex items-center h-14 px-5 gap-2 rounded-full border border-zinc-700 bg-black/40 backdrop-blur-md
-                          transition-all focus-within:border-zinc-500"
+              className="flex items-center h-12 px-5 py-1 gap-2 rounded-full border border-zinc-700 bg-black/40 backdrop-blur-md
+                          transition-all focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-white/10 focus-within:shadow-[0_0_20px_rgba(255,255,255,0.1)] "
             >
               <Search className="w-5 h-5 text-zinc-400 shrink-0" />
 
@@ -190,14 +189,12 @@ function App() {
                 onChange={(e) => setSearchInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="관심 있는 클래스, 토픽 주제를 검색하세요."
-                className="flex-1 h-full border-none bg-transparent
-                text-lg! text-zinc-200  placeholder:text-zinc-500
-        focus-visible:ring-0 mr-2"
+                className="flex-1 h-full border-none bg-transparent text-lg! text-zinc-200 placeholder:text-zinc-500 focus-visible:ring-0 mr-2"
               />
 
               <Button
                 onClick={handleSearch}
-                className="h-10 px-5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium shadow-inner"
+                className="h-9 px-5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium shadow-inner"
               >
                 검색
               </Button>
