@@ -1,20 +1,81 @@
 import { motion } from 'framer-motion';
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
+// ✅ 성능 최적화된 애니메이션 (transform 제거)
+const fadeIn = {
+  hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    y: 0,
-    transition: { duration: 0.5 },
+    transition: { duration: 0.4 },
   },
 };
+
+const sections = [
+  {
+    title: 'Problem',
+    content: (
+      <>
+        <p>
+          초기에는 useState 기반으로 모든 상태를 관리하며 UI와 로직이 강하게 결합된 구조였습니다.
+        </p>
+        <p>
+          이로 인해 컴포넌트가 비대해지고, 동일한 데이터 요청이 여러 곳에서 발생하는 문제가
+          있었습니다.
+        </p>
+        <p>
+          특히 서버 상태와 UI 상태가 명확히 구분되지 않아 불필요한 리렌더링과 데이터 흐름의 복잡성이
+          증가했습니다.
+        </p>
+      </>
+    ),
+  },
+  {
+    title: 'Solution',
+    content: (
+      <>
+        <p>서버 상태와 UI 상태를 분리하는 방향으로 구조를 개선했습니다.</p>
+        <p>
+          <strong>React Query</strong>를 도입하여 서버 상태를 전담 관리하고, 캐싱 및 자동 리페칭을
+          통해 데이터 동기화 문제를 해결했습니다.
+        </p>
+        <p>
+          Custom Hook과 Service Layer를 분리하여 컴포넌트는 UI 렌더링에만 집중하도록 구조를
+          개선했습니다.
+        </p>
+        <p>그 결과 데이터 요청 로직이 중앙화되었고, 중복 API 호출을 줄일 수 있었습니다.</p>
+      </>
+    ),
+  },
+  {
+    title: 'Trade-off',
+    content: (
+      <>
+        <p>React Query 도입으로 러닝 커브가 증가했습니다.</p>
+        <p>query key 관리 및 캐시 제어가 복잡해질 수 있는 리스크가 존재했습니다.</p>
+        <p>Supabase는 빠른 개발이 가능하지만 복잡한 데이터 처리에는 한계가 있었습니다.</p>
+      </>
+    ),
+  },
+  {
+    title: 'Troubleshooting',
+    content: (
+      <>
+        <p>좋아요 기능에서 중복 요청이 발생하는 문제가 있었습니다.</p>
+        <p>
+          React Query의 mutation과 optimistic update를 적용하여 즉각적인 UI 반영과 중복 요청을
+          방지했습니다.
+        </p>
+        <p>이를 통해 사용자 경험이 개선되고 불필요한 네트워크 요청을 줄일 수 있었습니다.</p>
+      </>
+    ),
+  },
+];
 
 export default function CaseStudyPage() {
   return (
     <main className="max-w-4xl mx-auto px-6 pt-20 pb-10 space-y-10">
       {/* 🔥 Hero */}
       <motion.section
-        variants={fadeUp}
+        variants={fadeIn}
         initial="hidden"
         animate="show"
         className="
@@ -36,61 +97,21 @@ export default function CaseStudyPage() {
         </p>
       </motion.section>
 
-      {/* 🔥 공통 섹션 카드 */}
-      {[
-        {
-          title: 'Problem',
-          content: (
-            <>
-              <p>
-                초기에는 useState 기반으로 모든 상태를 관리하며 UI와 로직이 강하게 결합된
-                구조였습니다.
-              </p>
-              <p>이로 인해 컴포넌트가 비대해지고 유지보수가 어려운 문제가 발생했습니다.</p>
-              <p>
-                또한 서버 상태와 UI 상태가 명확히 구분되지 않아 비효율적인 데이터 흐름이
-                발생했습니다.
-              </p>
-            </>
-          ),
-        },
-        {
-          title: 'Solution',
-          content: (
-            <>
-              <p>서버 상태와 UI 상태를 분리하는 방향으로 구조를 개선했습니다.</p>
-              <p>
-                <strong>React Query</strong>를 도입하여 데이터 관리와 캐싱을 분리했습니다.
-              </p>
-              <p>Custom hook과 service 레이어를 통해 컴포넌트는 UI에만 집중하도록 설계했습니다.</p>
-            </>
-          ),
-        },
-        {
-          title: 'Trade-off',
-          content: (
-            <>
-              <p>React Query 도입으로 러닝 커브가 증가했습니다.</p>
-              <p>query key 관리 및 캐시 제어가 복잡해질 수 있는 리스크가 존재했습니다.</p>
-              <p>Supabase는 빠른 개발이 가능하지만 복잡한 데이터 처리에는 한계가 있었습니다.</p>
-            </>
-          ),
-        },
-      ].map((section, i) => (
+      {/* 🔥 Section Cards */}
+      {sections.map((section, i) => (
         <motion.section
           key={i}
-          variants={fadeUp}
+          variants={fadeIn}
           initial="hidden"
           whileInView="show"
-          viewport={{ once: true }}
+          viewport={{ once: true, margin: '-50px' }}
           className="
             flex flex-col gap-6
             p-6 rounded-2xl
-            bg-white/5 backdrop-blur-md
+            bg-white/5
             border border-white/10
             hover:border-white/20
-            hover:shadow-[0_10px_40px_rgba(0,0,0,0.6)]
-            transition-all duration-300
+            transition-colors duration-300
           "
         >
           <h2 className="text-2xl font-semibold flex items-center gap-2">
@@ -104,9 +125,9 @@ export default function CaseStudyPage() {
         </motion.section>
       ))}
 
-      {/* 🔥 Tech Decision (카드 분리) */}
+      {/* 🔥 Tech Decisions */}
       <motion.section
-        variants={fadeUp}
+        variants={fadeIn}
         initial="hidden"
         whileInView="show"
         viewport={{ once: true }}
@@ -126,11 +147,11 @@ export default function CaseStudyPage() {
           {[
             {
               title: 'React Query',
-              desc: '서버 상태를 UI와 분리하고 캐싱과 데이터 흐름을 효율적으로 관리하기 위해 도입',
+              desc: '서버 상태를 UI와 분리하고 캐싱 및 자동 리페칭을 통해 데이터 동기화 문제를 해결',
             },
             {
               title: 'Custom Hooks',
-              desc: '데이터 로직을 분리하여 UI 컴포넌트의 책임을 줄이고 재사용성을 높임',
+              desc: '데이터 로직을 분리하여 UI 컴포넌트의 책임을 줄이고 재사용성을 향상',
             },
             {
               title: 'Service Layer',
@@ -144,8 +165,7 @@ export default function CaseStudyPage() {
                 bg-white/5
                 border border-white/10
                 hover:border-emerald-400/40
-                hover:scale-[1.02]
-                transition-all
+                transition-colors
               "
             >
               <h3 className="text-white font-semibold mb-2">{item.title}</h3>
@@ -157,7 +177,7 @@ export default function CaseStudyPage() {
 
       {/* 🔥 Result & Learned */}
       <motion.section
-        variants={fadeUp}
+        variants={fadeIn}
         initial="hidden"
         whileInView="show"
         viewport={{ once: true }}
@@ -174,9 +194,15 @@ export default function CaseStudyPage() {
         </h2>
 
         <div className="flex flex-col gap-4 text-zinc-300 text-[15px] leading-relaxed">
-          <p>구조 개선을 통해 데이터 흐름이 명확해지고 유지보수성이 향상되었습니다.</p>
-          <p>React Query 도입으로 UX와 데이터 관리 효율이 개선되었습니다.</p>
-          <p>이번 프로젝트를 통해 단순 구현이 아닌 구조 설계의 중요성을 이해하게 되었습니다.</p>
+          <p>서버 상태 분리를 통해 데이터 흐름이 명확해지고 유지보수성이 개선되었습니다.</p>
+          <p>
+            React Query의 캐싱 전략을 활용하여 불필요한 API 요청을 줄이고 사용자 경험을
+            개선했습니다.
+          </p>
+          <p>
+            컴포넌트 책임을 분리함으로써 코드 재사용성이 증가하고 기능 확장이 용이한 구조로
+            개선되었습니다.
+          </p>
         </div>
       </motion.section>
     </main>
