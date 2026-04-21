@@ -1,17 +1,16 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useEffect, useCallback, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
-import { ArrowLeft, Eye, Heart } from 'lucide-react';
+import { ArrowLeft, Eye, Heart, Calendar, Share2, User } from 'lucide-react';
 
 import { useAuthStore } from '@/stores';
 import { AppDeleteDialog, AppEditor } from '@/components/common';
-import { Button, Separator } from '@/components/ui';
+import { Button, Badge } from '@/components/ui';
 import CommentBox from './comment';
 
-// hook
 import {
   useTopicDetail,
   useTopicLikes,
@@ -19,6 +18,13 @@ import {
   useToggleLike,
   useDeleteTopic,
 } from '@/hooks/useTopic';
+
+const RELATED_TOPICS = [
+  { id: 1, title: 'Next.js 14의 서버 컴포넌트 이해하기', date: '2026.04.10' },
+  { id: 2, title: '효율적인 상태 관리를 위한 Zustand 활용법', date: '2026.04.12' },
+  { id: 3, title: '2026년 프론트엔드 디자인 트렌드 분석', date: '2026.04.15' },
+  { id: 4, title: 'TypeScript 5.0 신규 기능 살펴보기', date: '2026.04.18' },
+];
 
 export default function TopicDetail() {
   const { id } = useParams();
@@ -32,9 +38,15 @@ export default function TopicDetail() {
   const toggleLike = useToggleLike(topicId, user?.id);
   const deleteMutation = useDeleteTopic(topicId);
 
-  const isLiked = likesData.some((row) => row.user_id === user?.id);
+  const authorId = useMemo(() => {
+    const targetEmail = user?.email || 'anonymous@insight.hub';
+    return targetEmail.split('@')[0];
+  }, [user?.email]);
 
-  const isInitialLoading = isLoading && !topic;
+  const isLiked = useMemo(
+    () => likesData.some((row) => row.user_id === user?.id),
+    [likesData, user?.id]
+  );
 
   useEffect(() => {
     if (topicId) increaseViews.mutate();
@@ -43,128 +55,144 @@ export default function TopicDetail() {
   const handleDelete = useCallback(async () => {
     try {
       await deleteMutation.mutateAsync();
-
       toast.success('토픽이 삭제되었습니다.');
       navigate('/');
     } catch (err) {
       console.error(err);
-      toast.error('토픽 삭제 중 오류가 발생했습니다.');
+      toast.error('삭제 처리 중 오류가 발생했습니다.');
     }
   }, [deleteMutation, navigate]);
 
-  if (isInitialLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-[500px] text-zinc-400">
-        토픽 정보를 불러오는 중입니다...
-      </div>
-    );
-  }
-
-  if (!topic) {
-    return (
-      <div className="flex justify-center items-center min-h-[500px] text-zinc-400">
-        존재하지 않는 토픽입니다.
-      </div>
-    );
-  }
+  if (isLoading && !topic) return <div className="min-h-screen bg-[#0a0a0a]" />;
 
   return (
-    <main className="w-full min-h-[720px] flex flex-col">
-      {/* ============================ */}
-      {/* 썸네일 */}
-      {/* ============================ */}
-      <div
-        className="relative w-full h-60 md:h-100 bg-cover bg-position-[50%_35%] bg-accent"
-        style={{ backgroundImage: `url(${topic.thumbnail})` }}
-      >
-        <div className="absolute top-6 left-6 z-10 flex items-center gap-2 mt-5">
-          <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft />
+    /* 1. pt를 통해 fixed 헤더 높이(66px)만큼 정확히 밀어냄 */
+    <main className="relative w-full min-h-screen bg-[#0a0a0a] text-zinc-100 pt-[66px] overflow-x-hidden">
+      {/* 2. 배경 이미지 영역: w-full + max-w-none으로 부모 제약 해제 */}
+      <header className="relative w-full h-[400px] md:h-[450px] overflow-hidden">
+        {/* 이미지가 꽉 안 차는 문제를 방지하기 위해 110% 너비로 강제 확장 후 중앙 정렬 */}
+        <div
+          className="absolute inset-0 w-screen left-1/2 -translate-x-1/2 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${topic?.thumbnail || '/assets/default-thumbnail.png'})` }}
+        />
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-linear-to-t from-[#0a0a0a] via-transparent to-transparent" />
+
+        <nav className="relative z-20 w-full max-w-7xl mx-auto px-6 pt-6 flex justify-between items-center">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(-1)}
+            className="rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-white px-5 h-10 text-xs font-bold hover:bg-white/10 transition-all"
+          >
+            <ArrowLeft size={16} className="mr-2" /> Back
           </Button>
 
-          {topic.author === user?.id && (
-            <AppDeleteDialog
-              onConfirm={handleDelete}
-              title="정말 해당 토픽을 삭제하시겠습니까?"
-              description="삭제 시 모든 내용이 영구적으로 삭제됩니다."
-            />
-          )}
+          <div className="flex gap-3">
+            {topic?.author === user?.id && (
+              <AppDeleteDialog onConfirm={handleDelete} title="토픽 삭제" />
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-white "
+            >
+              <Share2 size={16} />
+            </Button>
+          </div>
+        </nav>
+
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 mt-6 pointer-events-none">
+          <Badge className="mb-4 bg-emerald-500 text-white border-none px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
+            {topic?.category}
+          </Badge>
+          <h1 className="text-3xl md:text-5xl font-black tracking-tighter leading-[1.2] max-w-4xl break-keep drop-shadow-2xl">
+            {topic?.title}
+          </h1>
+          <div className="flex items-center gap-5 mt-8 text-zinc-300 text-[11px] font-bold uppercase tracking-widest">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+              <User size={13} className="text-emerald-400" />
+              <span>{authorId}</span>
+            </div>
+            <div className="flex items-center gap-2 opacity-40 font-medium">
+              <Calendar size={13} />
+              <span>{dayjs(topic?.created_at).format('YYYY. MM. DD')}</span>
+            </div>
+          </div>
         </div>
+      </header>
 
-        <div className="absolute inset-0 bg-linear-to-r from-[#0a0a0a] via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-linear-to-t from-[#0a0a0a] via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-linear-to-l from-[#0a0a0a] via-transparent to-transparent" />
-      </div>
-
-      {/* ============================ */}
-      {/* 제목 영역 */}
-      {/* ============================ */}
-      <section className="relative w-full flex flex-col items-center -mt-40 text-center">
-        <span className="mb-3 text-accent-foreground text-sm">{topic.category}</span>
-        <h1 className="font-extrabold tracking-tight text-xl sm:text-2xl md:text-4xl">
-          {topic.title}
-        </h1>
-
-        <Separator className="w-6! my-6 bg-foreground" />
-
-        <span className="text-sm text-zinc-500">
-          {dayjs(topic.created_at).format('YYYY.MM.DD')}
-        </span>
-      </section>
-
-      <div className="w-full py-10">
-        <AppEditor value={JSON.parse(topic.content)} readonly />
-      </div>
-
-      <div className="p-4">
-        <div className="flex gap-4 mt-4 items-center justify-end text-[16px] pr-6">
-          <div className="flex items-center gap-1.5 text-gray-200">
-            <Eye size={22} />
-            <span>{topic.views}</span>
+      {/* 본문 레이아웃 */}
+      <section className="w-full max-w-[1200px] mx-auto px-6 -mt-16 pb-32">
+        <article className="relative z-10 bg-[#121214] border border-white/5 rounded-[48px] py-10 md:p-10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)]">
+          <div className="prose prose-invert prose-emerald max-w-none min-h-[300px] leading-[1.9] text-zinc-300 text-[17px]">
+            <AppEditor
+              value={
+                typeof topic?.content === 'string' ? JSON.parse(topic.content) : topic?.content
+              }
+              readonly
+            />
           </div>
 
-          <button
-            disabled={toggleLike.isPending}
-            className={`flex items-center gap-1.5 transition cursor-pointer ${
-              isLiked ? 'text-red-500' : 'text-gray-200'
-            }`}
-            onClick={() => toggleLike.mutate()}
-          >
-            <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
-            <span>{topic.likes}</span>
-          </button>
-        </div>
-      </div>
+          <div className="ml-10 mt-20 flex items-center justify-between">
+            <div className="flex gap-3">
+              <div className="flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-zinc-900 text-zinc-400 border border-white/5 font-bold text-xs uppercase">
+                <Eye size={16} /> {topic?.views.toLocaleString()} VIEWS
+              </div>
+              <button
+                disabled={toggleLike.isPending}
+                onClick={() => toggleLike.mutate()}
+                className={`flex items-center gap-2.5 px-7 py-3 rounded-2xl border transition-all font-bold text-xs active:scale-95 ${
+                  isLiked
+                    ? 'bg-rose-500 border-rose-400 text-white shadow-lg'
+                    : 'bg-zinc-900 text-zinc-400 border-white/5'
+                }`}
+              >
+                <Heart size={16} fill={isLiked ? 'white' : 'none'} /> {topic?.likes}
+              </button>
+            </div>
+          </div>
+        </article>
 
-      <Separator />
+        {/* 3. 댓글 영역 + 우측 Sticky 추천 토픽 */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mt-24 items-start">
+          <div className="lg:col-span-8">
+            <div className="flex items-center gap-4 mb-12 px-2">
+              <h3 className="text-3xl font-black tracking-tighter italic">Discussions</h3>
+              <div className="h-px flex-1 bg-white/5" />
+            </div>
+            <div className="px-2">
+              <CommentBox topicId={topicId} />
+            </div>
+          </div>
 
-      <div className="relative bg-linear-to-b from-zinc-950 via-zinc-900 to-zinc-950">
-        <div className="z-10 flex justify-center gap-3 px-0 py-8 items-start">
-          <section className="flex-1 max-w-4xl">
-            <CommentBox topicId={topicId} />
-          </section>
-
-          <aside className="hidden lg:block w-[320px] mr-20 space-y-6 sticky top-20">
-            <div className="bg-zinc-900/70 border border-zinc-800 rounded-2xl p-4 shadow-lg backdrop-blur-sm">
-              <h3 className="text-white font-semibold text-lg mb-3 flex items-center gap-2">
-                🔥 인기 토픽
-              </h3>
-              <ul className="space-y-2 text-zinc-400 text-sm">
-                {[
-                  'React vs Vue 논쟁',
-                  'Supabase 인증 완전정복',
-                  'Tailwind로 포트폴리오 만들기',
-                  'Next.js App Router 2025 패턴',
-                ].map((item, i) => (
-                  <li key={i} className="hover:text-emerald-400 cursor-pointer transition-colors">
-                    {item}
-                  </li>
-                ))}
-              </ul>
+          {/* Sticky Sidebar: 오직 댓글 영역 우측에만 존재 */}
+          <aside className="hidden lg:block lg:col-span-4 mt-20">
+            <div className="sticky top-[calc(66px+40px)] space-y-12 pl-8 border-l border-white/5">
+              <section>
+                <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-500 mb-8 px-2">
+                  Related Topics
+                </h4>
+                <div className="space-y-3">
+                  {RELATED_TOPICS.map((item) => (
+                    <div
+                      key={item.id}
+                      className="group p-5 rounded-3xl hover:bg-white/5 transition-all cursor-pointer border border-transparent hover:border-white/5"
+                    >
+                      <h5 className="font-bold text-[14px] leading-snug group-hover:text-emerald-400 transition-colors line-clamp-2 break-keep">
+                        {item.title}
+                      </h5>
+                      <div className="flex items-center gap-2 mt-4 text-[10px] text-zinc-600 font-bold tracking-widest uppercase">
+                        <Calendar size={12} />
+                        <span>{item.date}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
             </div>
           </aside>
         </div>
-      </div>
+      </section>
     </main>
   );
 }

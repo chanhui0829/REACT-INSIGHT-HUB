@@ -1,13 +1,25 @@
-import { useMemo, useState, useCallback, useEffect } from 'react';
+/**
+ * @file App.tsx
+ * @description Insight Hub 메인 피드 컴포넌트.
+ * URL 기반의 상태 관리(Source of Truth)를 통해 뒤로가기/새로고침 대응 및
+ * TanStack Query의 Prefetching을 활용한 고성능 페이지네이션을 구현했습니다.
+ */
+
+import { useMemo, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
-import { Funnel, NotebookPen, PencilLine, Search } from 'lucide-react';
+import { Funnel, NotebookPen, PencilLine, Search, Sparkles, Loader2 } from 'lucide-react';
 
-// Store & Utils
+// —————————————————————————————————————————————————————————————————————————————
+// Stores & Hooks
+// —————————————————————————————————————————————————————————————————————————————
 import { useAuthStore } from '@/stores';
+import { useTopicList, usePrefetchTopics } from '@/hooks/useTopic';
 import { SORT_CATEGORY } from '@/constants/sort.constant';
 
-// Components
+// —————————————————————————————————————————————————————————————————————————————
+// UI Components
+// —————————————————————————————————————————————————————————————————————————————
 import { AppDraftsDialog, AppSidebar } from '@/components/common';
 import { TopicCard } from '@/components/topics';
 import {
@@ -27,58 +39,35 @@ import {
   SelectValue,
 } from '@/components/ui';
 
-// useTopic 하나로 통합 사용
-import { useTopicList, usePrefetchTopics } from '@/hooks/useTopic';
-
 function App() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const [searchParams, setSearchParams] = useSearchParams();
 
+  /**
+   * [개선 사항] URL SearchParams를 단일 원천(Single Source of Truth)으로 사용
+   * 별도의 useState 없이 URL의 변화가 직접 UI 상태를 결정하도록 설계되었습니다.
+   */
   const category = searchParams.get('category') ?? 'all';
-  const initialSort = searchParams.get('sort') ?? 'latest';
-  const initialPage = Number(searchParams.get('page')) || 1;
+  const sortOption = searchParams.get('sort') ?? 'latest';
+  const currentPage = Number(searchParams.get('page')) || 1;
+  const searchQuery = searchParams.get('q') ?? '';
 
+  // 페이지당 아이템 수 및 데이터 범위 계산
   const ITEMS_PER_PAGE = 8;
-  const [currentPage, setCurrentPage] = useState(initialPage);
-  const [searchInput, setSearchInput] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortOption, setSortOption] = useState(initialSort);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const currentCategory = params.get('category') ?? 'all';
-    const currentSort = params.get('sort') ?? 'latest';
-    const currentPageStr = params.get('page') ?? '1';
-
-    if (
-      currentCategory !== category ||
-      currentSort !== sortOption ||
-      currentPageStr !== String(currentPage)
-    ) {
-      setSearchParams({ category, sort: sortOption, page: String(currentPage) }, { replace: true });
-    }
-  }, [category, sortOption, currentPage, setSearchParams]);
-
   const { startIndex, endIndex } = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return { startIndex: start, endIndex: start + ITEMS_PER_PAGE - 1 };
   }, [currentPage]);
 
+  // 데이터 fetch를 위한 필터 객체 memoization
   const filters = useMemo(
-    () => ({
-      category,
-      searchQuery,
-      sortOption,
-      startIndex,
-      endIndex,
-    }),
+    () => ({ category, searchQuery, sortOption, startIndex, endIndex }),
     [category, searchQuery, sortOption, startIndex, endIndex]
   );
 
-  // 🔥 hook 사용
+  // 데이터 fetching 및 프리페칭
   const { data, isLoading, isFetching } = useTopicList(filters, currentPage);
-
   const prefetchNext = usePrefetchTopics(filters, currentPage);
 
   useEffect(() => {
@@ -88,24 +77,56 @@ function App() {
   const topics = data?.topics ?? [];
   const totalPages = Math.ceil((data?.total ?? 0) / ITEMS_PER_PAGE);
 
-  const handleSearch = useCallback(() => {
-    if (searchInput.trim().length < 2) {
-      toast.warning('검색어를 두 글자 이상 입력해주세요.');
-      return;
-    }
-    setSearchQuery(searchInput.trim());
-    setCurrentPage(1);
-  }, [searchInput]);
+  // —————————————————————————————————————————————————————————————————————————————
+  // Handlers
+  // —————————————————————————————————————————————————————————————————————————————
+
+  /**
+   * 공통 URL 상태 업데이트 함수
+   */
+  const updateParams = useCallback(
+    (newParams: Record<string, string>) => {
+      setSearchParams(
+        (prev) => {
+          Object.entries(newParams).forEach(([key, value]) => {
+            if (value) prev.set(key, value);
+            else prev.delete(key);
+          });
+          return prev;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
+  const handleSearch = useCallback(
+    (value: string) => {
+      const trimmed = value.trim();
+      if (trimmed.length > 0 && trimmed.length < 2) {
+        toast.warning('검색어를 두 글자 이상 입력해주세요.');
+        return;
+      }
+      // 검색 시 페이지를 1로 리셋
+      updateParams({ q: trimmed, page: '1' });
+    },
+    [updateParams]
+  );
 
   const handleCategoryChange = useCallback(
     (value: string) => {
-      setSortOption('latest');
-      setCurrentPage(1);
-      setSearchQuery('');
-      setSearchInput('');
       setSearchParams({ category: value || 'all', sort: 'latest', page: '1' });
     },
     [setSearchParams]
+  );
+
+  const handlePageChange = useCallback(
+    (page: number) => {
+      if (page < 1 || page > totalPages) return;
+      updateParams({ page: String(page) });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [updateParams, totalPages]
   );
 
   const handleRoute = useCallback(() => {
@@ -121,185 +142,188 @@ function App() {
     const end = Math.min(totalPages, currentPage + 2);
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }, [currentPage, totalPages]);
+
   return (
-    <main className="w-full flex flex-col lg:flex-row gap-8 items-start mt-16 ">
-      {/* 모바일 사이드바 */}
-      <div className="lg:hidden w-full sticky top-20 z-30">
-        <AppSidebar category={category} setCategory={handleCategoryChange} />
-      </div>
-
-      {/* 데스크탑 사이드바 */}
-      <aside className="hidden lg:block w-64 shrink-0 sticky top-24">
-        <AppSidebar category={category} setCategory={handleCategoryChange} />
-      </aside>
-
-      {/* 메인 영역 */}
-      <section className="flex-1 min-w-0 flex flex-col gap-10">
-        {/* Floating 버튼 */}
-        <div className="fixed right-1/2 bottom-10 translate-x-1/2 z-40 flex gap-2 items-center">
+    <main className="w-full flex lg:flex-row gap-16 items-start mt-18 px-6 max-w-[1240px] mx-auto mb-32">
+      {/* 🚀 Sticky Action Group */}
+      <div className="fixed left-1/2 bottom-10 -translate-x-1/2 z-50 ">
+        <div className="flex items-center gap-2 p-3 rounded-full bg-zinc-900/90 backdrop-blur-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <Button
-            variant="destructive"
-            className="rounded-full px-4! py-4! shadow-lg hover:scale-105 transition"
             onClick={handleRoute}
+            className="rounded-full h-12 px-7! bg-red-500 hover:bg-red-400 text-zinc-800 font-black text-xs uppercase tracking-widest flex gap-2 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,95,71,0.6)]"
           >
-            <PencilLine />
-            나만의 토픽 작성
+            <PencilLine size={16} />새 토픽 작성
           </Button>
-
+          <div className="w-px h-6 bg-zinc-800 mx-1" />
           <AppDraftsDialog>
             <Button
               variant="outline"
               size="icon"
-              className="rounded-full w-10 h-10 border bg-muted hover:scale-115 transition"
+              className="rounded-full w-12 h-12 hover:bg-white/10 transition-colors"
             >
-              <NotebookPen className="w-5 h-5" />
+              <NotebookPen className="w-5 h-5 text-zinc-400" />
             </Button>
           </AppDraftsDialog>
         </div>
+      </div>
 
-        {/* header */}
-        <header className="w-full flex justify-center py-2">
-          <div className="flex flex-col items-center text-center gap-4 max-w-2xl">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-              <img src="/assets/gifs/gif-002.gif" className="w-10 h-10" alt="insight-gif" />
-            </div>
+      <aside className="hidden lg:block w-52 shrink-0 self-stretch">
+        <div className="sticky top-16 flex flex-col gap-6">
+          <div className="px-3 pb-2 border-b border-white/5"></div>
+          <AppSidebar category={category} setCategory={handleCategoryChange} />
+        </div>
+      </aside>
 
-            <h1 className="text-2xl md:text-3xl font-semibold leading-snug tracking-tight">
-              지식과 인사이트를 모아
-              <br />
-              <span className="text-emerald-400">더 깊이 있는 토픽</span>으로 나누세요
-            </h1>
-
-            <p className="text-zinc-400 text-xs md:text-sm">
-              생각을 기록하고, 경험을 공유하며 인사이트를 만들어보세요.
-            </p>
+      <section className="flex-1 min-w-0 flex flex-col gap-12 mt-4">
+        <header className="w-full flex flex-col items-center text-center gap-6 py-4">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black tracking-[0.2em] uppercase">
+            <Sparkles size={12} className="animate-pulse" />
+            Knowledge & Insight
           </div>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tighter leading-[1.1] text-white ">
+            지식의 조각을 모아
+            <br />
+            <span className="bg-linear-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent italic pr-2">
+              인사이트를 연결하세요
+            </span>
+          </h1>
+          <p className="text-zinc-500 text-[15px] max-w-md leading-relaxed font-medium opacity-90">
+            생각을 기록하고 경험을 공유하며
+            <br />
+            당신만의 깊이 있는 인사이트를 만들어보세요.
+          </p>
         </header>
-        {/* 검색 */}
-        <div className="w-full flex justify-center">
-          <div className="w-full max-w-2xl">
-            <div
-              className="flex items-center h-12 px-5 py-1 gap-2 rounded-full border border-zinc-700 bg-black/40 backdrop-blur-md
-                          transition-all focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-white/10 focus-within:shadow-[0_0_20px_rgba(255,255,255,0.1)] "
-            >
-              <Search className="w-5 h-5 text-zinc-400 shrink-0" />
 
+        <div className="w-full flex flex-col gap-10">
+          <div className="relative group w-full max-w-xl mx-auto transition-all duration-500">
+            <div className="absolute -inset-1 bg-linear-to-r from-emerald-400/20 to-blue-500/20 rounded-full blur-xl opacity-0 group-focus-within:opacity-100 transition duration-700 " />
+            <div className="relative flex items-center h-15 px-6 gap-3 rounded-full border border-white/10 bg-zinc-900/50 backdrop-blur-2xl focus-within:border-emerald-500/40 transition-all ">
+              <Search className="w-6 h-6 text-zinc-600" />
               <Input
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="관심 있는 클래스, 토픽 주제를 검색하세요."
-                className="flex-1 h-full border-none bg-transparent text-lg! text-zinc-200 placeholder:text-zinc-500 focus-visible:ring-0 mr-2"
+                defaultValue={searchQuery}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch(e.currentTarget.value)}
+                placeholder="지식과 코드를 검색하세요."
+                className="flex-1 h-10 border-none! bg-transparent! text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-0"
               />
-
               <Button
-                onClick={handleSearch}
-                className="h-9 px-5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium shadow-inner"
+                onClick={(e) => {
+                  const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                  handleSearch(input.value);
+                }}
+                className="h-9 px-6 rounded-full bg-gray-300 hover:bg-gray-200 text-zinc-950 font-black text-xs tracking-tight shadow-xl transition-all active:scale-95"
               >
                 검색
               </Button>
             </div>
           </div>
-        </div>
-        {/* 정렬 */}
-        <div className="flex justify-end">
-          <div className="flex items-center gap-2">
-            <Funnel size={14} className="text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">정렬</p>
 
-            <Select
-              value={sortOption}
-              onValueChange={(v) => {
-                setSortOption(v);
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
+          <div className="flex justify-end items-center gap-4 w-full px-2">
+            {isFetching && !isLoading && (
+              <div className="flex items-center gap-2 text-zinc-600 animate-in fade-in slide-in-from-right-2 duration-500">
+                <Loader2 size={13} className="animate-spin" />
+                <span className="text-[10px] font-black tracking-widest uppercase opacity-60">
+                  Updating
+                </span>
+              </div>
+            )}
 
-              <SelectContent>
-                <SelectGroup>
-                  {SORT_CATEGORY.map((item) => (
-                    <SelectItem key={item.id} value={item.sortOption}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2 bg-zinc-900/50 px-4 py-1.5 rounded-2xl border border-white/5 transition-colors hover:border-white/10">
+              <Funnel size={12} className="text-zinc-500" />
+              <Select
+                value={sortOption}
+                onValueChange={(v) => updateParams({ sort: v, page: '1' })}
+              >
+                <SelectTrigger className="h-5 w-24 bg-transparent border-none px-2 text-[11px] text-zinc-400 font-bold uppercase tracking-wider focus:ring-0 shadow-none">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-[#0c0c0e] border-white/10 rounded-2xl shadow-2xl">
+                  <SelectGroup>
+                    {SORT_CATEGORY.map((item) => (
+                      <SelectItem
+                        key={item.id}
+                        value={item.sortOption}
+                        className="text-[11px] font-bold focus:bg-emerald-500/10 focus:text-emerald-400 rounded-xl m-1"
+                      >
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
-        {/* 리스트 */}
-        <div className="w-full flex flex-col gap-6">
+        <div className="min-h-[600px]">
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-40 rounded-xl bg-muted animate-pulse" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-8">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="h-64 rounded-4xl bg-zinc-900/40 border border-white/5 animate-pulse"
+                />
               ))}
             </div>
-          ) : topics.length > 0 ? (
-            <>
-              {isFetching && (
-                <p className="text-center text-xs text-muted-foreground">업데이트 중...</p>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {topics.map((topic) => (
-                  <TopicCard key={topic.id} props={topic} />
-                ))}
-              </div>
-            </>
           ) : (
-            <p className="text-center text-muted-foreground mt-10">
-              {searchQuery
-                ? `"${searchQuery}"에 대한 검색 결과가 없습니다.`
-                : '조회 가능한 토픽이 없습니다.'}
-            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-8">
+              {topics.map((topic) => (
+                <div
+                  key={topic.id}
+                  className="group transition-all duration-500 hover:translate-y-1"
+                >
+                  <TopicCard props={topic} />
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
-        {/* 페이지네이션 */}
         {totalPages > 1 && (
-          <Pagination className="mt-6 mb-10">
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setCurrentPage(Math.max(1, currentPage - 1));
-                  }}
-                />
-              </PaginationItem>
-
-              {visiblePages.map((page) => (
-                <PaginationItem key={page}>
-                  <PaginationLink
+          <div className="flex justify-center pt-16 ">
+            <Pagination className="bg-zinc-900/40 backdrop-blur-xl border border-white/5 p-1.5 rounded-3xl w-fit shadow-2xl">
+              <PaginationContent className="gap-1">
+                <PaginationItem>
+                  <PaginationPrevious
                     href="#"
-                    isActive={page === currentPage}
+                    className="hover:bg-white/5 rounded-2xl px-4 text-xs font-bold text-zinc-500"
                     onClick={(e) => {
                       e.preventDefault();
-                      setCurrentPage(page);
+                      handlePageChange(currentPage - 1);
                     }}
-                  >
-                    {page}
-                  </PaginationLink>
+                  />
                 </PaginationItem>
-              ))}
-
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setCurrentPage(Math.min(totalPages, currentPage + 1));
-                  }}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+                {visiblePages.map((page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      href="#"
+                      isActive={page === currentPage}
+                      className={`rounded-2xl w-10 h-10 text-xs font-black transition-all ${
+                        page === currentPage
+                          ? 'bg-emerald-500 text-zinc-700 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
+                          : 'hover:bg-white/5 text-zinc-600'
+                      }`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handlePageChange(page);
+                      }}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    className="hover:bg-white/5 rounded-2xl px-4 text-xs font-bold text-zinc-500"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handlePageChange(currentPage + 1);
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         )}
       </section>
     </main>

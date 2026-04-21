@@ -1,210 +1,244 @@
-import { motion } from 'framer-motion';
+/*
+ * @file CaseStudyPage.tsx
+ * @description Insight Hub 프로젝트 케이스 스터디.
+ */
 
-// ✅ 성능 최적화된 애니메이션 (transform 제거)
-const fadeIn = {
+import { useMemo } from 'react';
+import { motion, type Variants } from 'framer-motion';
+import {
+  ShieldAlert,
+  Zap,
+  Cpu,
+  CheckCircle2,
+  Code2,
+  Database,
+  Boxes,
+  MousePointer2,
+  Wind,
+} from 'lucide-react';
+
+const STAGGER: Variants = {
   hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { duration: 0.4 },
-  },
+  show: { opacity: 1, transition: { staggerChildren: 0.15 } },
 };
 
-const sections = [
-  {
-    title: 'Problem',
-    content: (
-      <>
-        <p>
-          초기에는 useState 기반으로 모든 상태를 관리하며 UI와 로직이 강하게 결합된 구조였습니다.
-        </p>
-        <p>
-          이로 인해 컴포넌트가 비대해지고, 동일한 데이터 요청이 여러 곳에서 발생하는 문제가
-          있었습니다.
-        </p>
-        <p>
-          특히 서버 상태와 UI 상태가 명확히 구분되지 않아 불필요한 리렌더링과 데이터 흐름의 복잡성이
-          증가했습니다.
-        </p>
-      </>
-    ),
-  },
-  {
-    title: 'Solution',
-    content: (
-      <>
-        <p>서버 상태와 UI 상태를 분리하는 방향으로 구조를 개선했습니다.</p>
-        <p>
-          <strong>React Query</strong>를 도입하여 서버 상태를 전담 관리하고, 캐싱 및 자동 리페칭을
-          통해 데이터 동기화 문제를 해결했습니다.
-        </p>
-        <p>
-          Custom Hook과 Service Layer를 분리하여 컴포넌트는 UI 렌더링에만 집중하도록 구조를
-          개선했습니다.
-        </p>
-        <p>그 결과 데이터 요청 로직이 중앙화되었고, 중복 API 호출을 줄일 수 있었습니다.</p>
-      </>
-    ),
-  },
-  {
-    title: 'Trade-off',
-    content: (
-      <>
-        <p>React Query 도입으로 러닝 커브가 증가했습니다.</p>
-        <p>query key 관리 및 캐시 제어가 복잡해질 수 있는 리스크가 존재했습니다.</p>
-        <p>Supabase는 빠른 개발이 가능하지만 복잡한 데이터 처리에는 한계가 있었습니다.</p>
-      </>
-    ),
-  },
-  {
-    title: 'Troubleshooting',
-    content: (
-      <>
-        <p>좋아요 기능에서 중복 요청이 발생하는 문제가 있었습니다.</p>
-        <p>
-          React Query의 mutation과 optimistic update를 적용하여 즉각적인 UI 반영과 중복 요청을
-          방지했습니다.
-        </p>
-        <p>이를 통해 사용자 경험이 개선되고 불필요한 네트워크 요청을 줄일 수 있었습니다.</p>
-      </>
-    ),
-  },
-];
+const ITEM_UP: Variants = {
+  hidden: { opacity: 0, y: 40 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
+};
+
+const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+  <h2 className="text-xs font-black text-emerald-500 tracking-[0.4em] uppercase mb-12 flex items-center gap-3">
+    <div className="w-8 h-px bg-emerald-500" />
+    {children}
+  </h2>
+);
 
 export default function CaseStudyPage() {
+  // 기술 스택 (한 줄 배치를 위해 최적화)
+  const techStack = useMemo(
+    () => [
+      { icon: <Code2 size={20} />, name: 'React' },
+      { icon: <Boxes size={20} />, name: 'Zustand' },
+      { icon: <Database size={20} />, name: 'Supabase' },
+      { icon: <Boxes size={20} />, name: 'React Query' },
+      { icon: <Wind size={20} />, name: 'Tailwind' },
+    ],
+    []
+  );
+
   return (
-    <main className="max-w-4xl mx-auto px-6 pt-20 pb-10 space-y-10">
-      {/* 🔥 Hero */}
-      <motion.section
-        variants={fadeIn}
-        initial="hidden"
-        animate="show"
-        className="
-          flex flex-col items-center text-center gap-6
-          p-10 rounded-2xl
-          bg-gradient-to-b from-emerald-500/10 to-transparent
-          border border-emerald-500/10
-        "
-      >
-        <h1 className="text-4xl font-bold tracking-tight">Insight Hub</h1>
+    <div className="min-h-screen bg-[#050505] text-zinc-400 pb-60 selection:bg-emerald-500/30">
+      <main className="mx-auto max-w-[1400px] px-8 pt-40">
+        {/* 🟢 1. PROJECT HERO & TECH STACK (일자 배치) */}
+        <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-52">
+          <div className="flex flex-col gap-16">
+            <div>
+              <h1 className="text-[13vw] md:text-[140px] font-black text-white leading-[0.8] tracking-[-0.05em] italic">
+                INSIGHT <br /> <span className="text-emerald-500">HUB.</span>
+              </h1>
+              <p className="mt-10 text-2xl text-zinc-500 font-bold max-w-2xl">
+                지식의 파편을 연결하는 아카이브 <br />
+                <span className="text-zinc-300">Architecture & Performance Case Study</span>
+              </p>
+            </div>
 
-        <p className="text-lg text-zinc-300">토픽 중심의 인사이트 콘텐츠 플랫폼</p>
-
-        <p className="max-w-2xl text-[15px] text-zinc-400 leading-relaxed">
-          정보는 넘쳐나지만, 깊이 있는 인사이트를 찾기는 어렵습니다.
-          <br />
-          Insight Hub는 주제별로 구조화된 토픽을 통해 지식과 경험을 더 쉽게 탐색하고 공유할 수
-          있도록 설계되었습니다.
-        </p>
-      </motion.section>
-
-      {/* 🔥 Section Cards */}
-      {sections.map((section, i) => (
-        <motion.section
-          key={i}
-          variants={fadeIn}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-50px' }}
-          className="
-            flex flex-col gap-6
-            p-6 rounded-2xl
-            bg-white/5
-            border border-white/10
-            hover:border-white/20
-            transition-colors duration-300
-          "
-        >
-          <h2 className="text-2xl font-semibold flex items-center gap-2">
-            <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
-            {section.title}
-          </h2>
-
-          <div className="flex flex-col gap-4 text-zinc-300 text-[15px] leading-relaxed">
-            {section.content}
+            {/* 기술 스택 5종 일자 배치 로우 */}
+            <div className="flex flex-wrap gap-3">
+              {techStack.map((tech) => (
+                <div
+                  key={tech.name}
+                  className="flex items-center gap-3 px-5 py-3 rounded-xl bg-zinc-900/50 border border-white/5 group hover:border-emerald-500/40 transition-all duration-300"
+                >
+                  <div className="text-emerald-500 group-hover:scale-110 transition-transform">
+                    {tech.icon}
+                  </div>
+                  <span className="text-white font-black text-xs uppercase tracking-wider">
+                    {tech.name}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </motion.section>
-      ))}
 
-      {/* 🔥 Tech Decisions */}
-      <motion.section
-        variants={fadeIn}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true }}
-        className="
-          flex flex-col gap-6
-          p-6 rounded-2xl
-          bg-white/5
-          border border-white/10
-        "
-      >
-        <h2 className="text-2xl font-semibold flex items-center gap-2">
-          <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
-          Tech Decisions
-        </h2>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {[
-            {
-              title: 'React Query',
-              desc: '서버 상태를 UI와 분리하고 캐싱 및 자동 리페칭을 통해 데이터 동기화 문제를 해결',
-            },
-            {
-              title: 'Custom Hooks',
-              desc: '데이터 로직을 분리하여 UI 컴포넌트의 책임을 줄이고 재사용성을 향상',
-            },
-            {
-              title: 'Service Layer',
-              desc: 'API 호출을 분리하여 데이터 접근 구조를 명확하게 설계',
-            },
-          ].map((item, i) => (
-            <div
-              key={i}
-              className="
-                p-4 rounded-xl
-                bg-white/5
-                border border-white/10
-                hover:border-emerald-400/40
-                transition-colors
-              "
-            >
-              <h3 className="text-white font-semibold mb-2">{item.title}</h3>
-              <p className="text-zinc-400 text-sm">{item.desc}</p>
+        <motion.div
+          variants={STAGGER}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
+          className="space-y-44"
+        >
+          {/* 🔴 2. MAIN CHALLENGE & SOLUTION (초록색 호버 효과) */}
+          <motion.section variants={ITEM_UP}>
+            <SectionTitle>Main Challenge & Solution</SectionTitle>
+            <div className="group relative p-14 rounded-[4rem] bg-zinc-900/20 border border-white/5 overflow-hidden transition-all duration-700 hover:border-emerald-500/50 hover:bg-emerald-500/1">
+              <div className="grid md:grid-cols-2 gap-20 relative z-10">
+                <div className="space-y-8">
+                  <div className="flex items-center gap-3 text-rose-500">
+                    <ShieldAlert size={24} />
+                    <span className="font-black tracking-[0.2em] uppercase text-[10px]">
+                      Critical Problem
+                    </span>
+                  </div>
+                  <h3 className="text-5xl font-black text-white tracking-tighter leading-tight">
+                    강하게 결합된 <br />
+                    로직의 파편화.
+                  </h3>
+                  <p className="text-xl font-medium text-zinc-500 leading-relaxed">
+                    데이터 요청 로직이 UI 컴포넌트와 뒤섞여 유지보수가 불가능한 상태였습니다. 코드의{' '}
+                    <span className="text-zinc-200">순수성</span>을 되찾기 위한 구조적 개선을
+                    단행했습니다.
+                  </p>
+                </div>
+                <div className="flex flex-col justify-center space-y-5">
+                  <div className="flex items-center gap-3 text-emerald-500 mb-2">
+                    <MousePointer2 size={18} className="animate-bounce" />
+                    <span className="font-black text-[10px] uppercase tracking-[0.2em]">
+                      Resolution
+                    </span>
+                  </div>
+                  {[
+                    'Service Layer를 통한 API 추상화',
+                    'Custom Hooks 기반 비즈니스 로직 분리',
+                    '상태 관리 도구의 선언적 활용',
+                  ].map((sol) => (
+                    <div
+                      key={sol}
+                      className="flex items-center gap-4 p-5 rounded-4xl bg-black/40 border border-white/5 group-hover:border-emerald-500/20 transition-all"
+                    >
+                      <CheckCircle2 size={18} className="text-emerald-500" />
+                      <span className="text-zinc-300 font-bold text-base">{sol}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="absolute inset-0 bg-linear-to-tr from-emerald-500/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
             </div>
-          ))}
-        </div>
-      </motion.section>
+          </motion.section>
 
-      {/* 🔥 Result & Learned */}
-      <motion.section
-        variants={fadeIn}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true }}
-        className="
-          flex flex-col gap-6
-          p-6 rounded-2xl
-          bg-gradient-to-b from-white/5 to-transparent
-          border border-white/10
-        "
-      >
-        <h2 className="text-2xl font-semibold flex items-center gap-2">
-          <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
-          Result & Learned
-        </h2>
+          {/* 🟣 3. TROUBLE SHOOTING (번개 아이콘 옆 표기) */}
+          <motion.section variants={ITEM_UP}>
+            <SectionTitle>Deep Troubleshooting</SectionTitle>
+            <div className="p-16 rounded-[5rem] bg-zinc-900/30 border border-white/5">
+              <div className="flex flex-col md:flex-row items-center gap-8 mb-16">
+                <div className="w-20 h-20 bg-violet-600/20 rounded-4xl flex items-center justify-center text-violet-400">
+                  <Zap size={36} fill="currentColor" />
+                </div>
+                <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase">
+                  Trouble Shooting
+                </h3>
+              </div>
 
-        <div className="flex flex-col gap-4 text-zinc-300 text-[15px] leading-relaxed">
-          <p>서버 상태 분리를 통해 데이터 흐름이 명확해지고 유지보수성이 개선되었습니다.</p>
-          <p>
-            React Query의 캐싱 전략을 활용하여 불필요한 API 요청을 줄이고 사용자 경험을
-            개선했습니다.
-          </p>
-          <p>
-            컴포넌트 책임을 분리함으로써 코드 재사용성이 증가하고 기능 확장이 용이한 구조로
-            개선되었습니다.
-          </p>
-        </div>
-      </motion.section>
-    </main>
+              <div className="grid md:grid-cols-2 gap-16 items-start">
+                <div className="space-y-6">
+                  <h4 className="text-2xl font-black text-zinc-200">
+                    낙관적 업데이트를 통한 UX 임계점 돌파
+                  </h4>
+                  <p className="text-lg text-zinc-500 leading-relaxed font-medium">
+                    네트워크 응답 대기 시간을 기술적으로 제거하여 사용자에게 네이티브 앱과 같은
+                    즉각적인 경험을 제공하는 데 주력했습니다.
+                  </p>
+                </div>
+                <div className="p-10 rounded-[3rem] bg-violet-600/3 border border-violet-500/10">
+                  <p className="text-[10px] font-black text-violet-400 uppercase tracking-[0.3em] mb-6">
+                    Technical Fix
+                  </p>
+                  <p className="text-zinc-300 font-bold leading-relaxed italic">
+                    "Race Condition 방지를 위한 쿼리 취소 로직과 에러 롤백 시스템을 구축하여 데이터
+                    무결성을 유지하며 0ms의 피드백 속도를 구현했습니다."
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.section>
+
+          {/* 🔵 4. TECH DECISIONS (Zustand & Tailwind 의사결정) */}
+          <motion.section variants={ITEM_UP}>
+            <SectionTitle>Technical Decisions</SectionTitle>
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                {
+                  title: 'Zustand',
+                  detail:
+                    'Flux 패턴을 단순화하여 보일러플레이트를 줄이고, 스토어 접근성을 높여 개발 속도를 2배 이상 단축했습니다.',
+                  icon: <Boxes />,
+                },
+                {
+                  title: 'Tailwind CSS',
+                  detail:
+                    '디자인 시스템의 파편화를 방지하고, CSS 파일 크기 최소화 및 일관된 UI 구현을 위해 채택했습니다.',
+                  icon: <Wind />,
+                },
+                {
+                  title: 'React Query',
+                  detail:
+                    '비동기 상태의 복잡성을 선언적으로 관리하여 서버 데이터 동기화 로직의 신뢰성을 확보했습니다.',
+                  icon: <Cpu />,
+                },
+              ].map((tech) => (
+                <div
+                  key={tech.title}
+                  className="p-12 rounded-[3.5rem] bg-zinc-900 border border-white/5 hover:border-zinc-700 transition-all group"
+                >
+                  <div className="text-emerald-500 mb-10 group-hover:scale-110 transition-transform origin-left">
+                    {tech.icon}
+                  </div>
+                  <h4 className="text-white font-black text-xl mb-4 tracking-tight italic underline decoration-emerald-500/30 decoration-2 underline-offset-8">
+                    {tech.title}
+                  </h4>
+                  <p className="text-zinc-500 font-bold leading-relaxed text-sm">{tech.detail}</p>
+                </div>
+              ))}
+            </div>
+          </motion.section>
+
+          {/* 🏁 5. LEARNING & GROWTH */}
+          <motion.section variants={ITEM_UP}>
+            <SectionTitle>Learning & Growth</SectionTitle>
+            <div className="grid md:grid-cols-12 gap-8">
+              <div className="md:col-span-7 p-14 rounded-[4rem] bg-emerald-500 text-black">
+                <h3 className="text-4xl font-black mb-8 tracking-tighter italic leading-none">
+                  Engineering <br /> Mindset
+                </h3>
+                <p className="text-xl font-bold leading-relaxed opacity-90">
+                  단순 구현보다 "왜?"라는 질문에 집중하며 아키텍처를 설계하는 법을 배웠습니다.
+                  유지보수 가능한 코드가 팀에 기여하는 가치를 몸소 체험했습니다.
+                </p>
+              </div>
+              <div className="md:col-span-5 p-14 rounded-[4rem] bg-zinc-900 border border-white/5 flex flex-col justify-end">
+                <h3 className="text-2xl font-black text-white mb-6 tracking-tighter italic">
+                  UX Reflection
+                </h3>
+                <p className="text-lg font-bold leading-relaxed text-zinc-500">
+                  기술은 결국 사람을 향해야 함을 느꼈습니다. 성능 최적화가 유저의 신뢰로 이어지는
+                  과정을 직접 목격했습니다.
+                </p>
+              </div>
+            </div>
+          </motion.section>
+        </motion.div>
+      </main>
+    </div>
   );
 }

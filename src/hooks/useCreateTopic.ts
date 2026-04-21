@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/constants/querykey.constant';
-import { insertTopic, updateTopic, uploadThumbnail } from '@/services/topic.service';
+import { insertTopic, updateTopic, uploadThumbnail } from '@/services/topicService';
 import type { Topic } from '@/types/topic.type';
 import { TOPIC_STATUS } from '@/types/topic.type';
 
@@ -10,36 +10,37 @@ type BuildPayload = (
 ) => Omit<Topic, 'id' | 'created_at' | 'author' | 'views' | 'likes'>;
 
 type Payload = {
-  id?: string;
+  id?: number | string;
   userId: string;
   buildPayload: BuildPayload;
   thumbnail: File | string | null;
 };
 
-// 🔹 저장
 export const useSaveTopic = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({ id, userId, buildPayload, thumbnail }: Payload) => {
+  // 리턴 타입을 { id: any }로 열어버려서 컴포넌트에서의 마찰을 없앱니다.
+  return useMutation<{ id: number | string }, Error, Payload>({
+    mutationFn: async (data) => {
+      const { id, userId, buildPayload, thumbnail } = data;
       const thumbnailUrl = await uploadThumbnail(thumbnail);
       const payload = buildPayload(TOPIC_STATUS.TEMP, thumbnailUrl);
 
       if (!id) {
-        await insertTopic(userId, payload);
+        // 새 글 저장
+        const result = await insertTopic(userId, payload);
+        // Supabase insert는 보통 배열로 데이터를 주거나 id를 포함한 객체를 줍니다.
+        // 만약 result가 숫자라면 객체로 감싸서 반환하세요.
+        return typeof result === 'object' ? result : { id: result };
       } else {
-        await updateTopic(id, payload);
+        // 기존 글 수정
+        await updateTopic(id as string, payload);
+        return { id }; // 이미 id를 알고 있으니 그대로 반환
       }
     },
-
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.drafts(variables.userId),
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.topics.all,
-      });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.drafts(variables.userId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.topics.all });
     },
   });
 };
@@ -56,7 +57,7 @@ export const usePublishTopic = () => {
       if (!id) {
         await insertTopic(userId, payload);
       } else {
-        await updateTopic(id, payload);
+        await updateTopic(id as string, payload);
       }
     },
 

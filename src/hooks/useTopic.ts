@@ -7,7 +7,7 @@ import {
   increaseViews,
   toggleLike,
   deleteTopic,
-} from '@/services/topic.service';
+} from '@/services/topicService';
 import type { Topic } from '@/types/topic.type';
 
 // ======================================================

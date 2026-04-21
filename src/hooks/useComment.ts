@@ -5,7 +5,7 @@ import {
   addComment,
   deleteComment,
   fetchCommentsCount,
-} from '@/services/comment.service';
+} from '@/services/commentService';
 
 // 🔹 댓글 목록 (infinite)
 export const useComments = (topicId: number) => {

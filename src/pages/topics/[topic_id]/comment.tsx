@@ -1,23 +1,36 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+'use client';
+
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import type { KeyboardEvent } from 'react';
-import { CircleUserRound, MessageSquareMore, ChevronsDown } from 'lucide-react';
+import { CircleUserRound, MessageSquareMore, ChevronsDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 
 import { Separator, Textarea, Button } from '@/components/ui';
 import { AppDeleteDialog } from '@/components/common';
-import { useQuery } from '@tanstack/react-query';
-
 import { QUERY_KEYS } from '@/constants/querykey.constant';
 
-// ✅ hook import
 import { useComments, useCommentsCount, useAddComment, useDeleteComment } from '@/hooks/useComment';
 
-export default function CommentBox({ topicId }: { topicId: number }) {
+// 날짜 포맷팅 라이브러리
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/ko';
+
+dayjs.extend(relativeTime);
+dayjs.locale('ko');
+
+interface CommentBoxProps {
+  topicId: number;
+}
+
+export default function CommentBox({ topicId }: CommentBoxProps) {
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const newCommentRef = useRef<HTMLTextAreaElement | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ---------------------------------------------------------
-  // 🔥 로그인한 유저 (이건 나중에 분리 가능)
+  // 1. 데이터 페칭 (사용자 정보, 댓글 목록, 총 개수)
   // ---------------------------------------------------------
   const { data: user } = useQuery({
     queryKey: QUERY_KEYS.user.me,
@@ -28,64 +41,48 @@ export default function CommentBox({ topicId }: { topicId: number }) {
     staleTime: Infinity,
   });
 
-  const currentUser = user || null;
-
-  // ---------------------------------------------------------
-  // 🔥 댓글 총 개수 카운트
-  // ---------------------------------------------------------
   const { data: totalCount = 0 } = useCommentsCount(topicId);
-
-  // ---------------------------------------------------------
-  // 🔥 Infinite Query — 최신순 댓글 로드
-  // ---------------------------------------------------------
   const { data, fetchNextPage, hasNextPage, status } = useComments(topicId);
 
-  const comments = data?.pages.flatMap((page) => page.comments) ?? [];
+  // 무한 스크롤 데이터를 단일 배열로 평탄화
+  const comments = useMemo(() => data?.pages.flatMap((page) => page.comments) ?? [], [data]);
 
   // ---------------------------------------------------------
-  // 🔥 댓글 작성
+  // 2. 비즈니스 로직 (등록, 삭제)
   // ---------------------------------------------------------
-  const [preventDoubleSubmit, setPreventDoubleSubmit] = useState(false);
-
   const addCommentMutation = useAddComment(topicId);
+  const deleteCommentMutation = useDeleteComment(topicId);
 
-  // ---------------------------------------------------------
-  // 🔥 Enter → 댓글 작성
-  // ---------------------------------------------------------
+  const handleSubmit = useCallback(() => {
+    const text = newCommentRef.current?.value?.trim();
+
+    if (!text) return toast.warning('내용을 입력해주세요.');
+    if (addCommentMutation.isPending) return;
+
+    setIsSubmitting(true);
+    addCommentMutation.mutate(text, {
+      onSuccess: () => {
+        toast.success('댓글이 등록되었습니다.');
+        if (newCommentRef.current) newCommentRef.current.value = '';
+        setIsSubmitting(false);
+      },
+      onError: () => {
+        toast.error('등록에 실패했습니다. 다시 시도해주세요.');
+        setIsSubmitting(false);
+      },
+    });
+  }, [addCommentMutation, isSubmitting]);
+
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.nativeEvent.isComposing) return;
-
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      e.stopPropagation();
-
-      const text = newCommentRef.current?.value?.trim();
-      if (!text) return toast.warning('댓글 내용을 입력하세요.');
-
-      if (preventDoubleSubmit) return;
-
-      setPreventDoubleSubmit(true);
-      addCommentMutation.mutate(text, {
-        onSuccess: () => {
-          toast.success('댓글이 등록되었습니다.');
-          if (newCommentRef.current) newCommentRef.current.value = '';
-          setPreventDoubleSubmit(false);
-        },
-        onError: () => {
-          toast.error('댓글 등록 중 오류가 발생했습니다.');
-          setPreventDoubleSubmit(false);
-        },
-      });
+      handleSubmit();
     }
   };
 
   // ---------------------------------------------------------
-  // 🔥 삭제
-  // ---------------------------------------------------------
-  const deleteCommentMutation = useDeleteComment(topicId);
-
-  // ---------------------------------------------------------
-  // 🔥 무한 스크롤
+  // 3. 무한 스크롤 구현 (Intersection Observer)
   // ---------------------------------------------------------
   const observerCallback = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -96,134 +93,134 @@ export default function CommentBox({ topicId }: { topicId: number }) {
   );
 
   useEffect(() => {
-    const observer = new IntersectionObserver(observerCallback, { threshold: 1 });
+    const observer = new IntersectionObserver(observerCallback, { threshold: 0.1 });
     const current = loaderRef.current;
-
     if (current) observer.observe(current);
-
     return () => {
       if (current) observer.unobserve(current);
     };
   }, [observerCallback]);
 
-  // ---------------------------------------------------------
-  // 🔥 렌더링
-  // ---------------------------------------------------------
   return (
-    <section className="w-full max-w-3xl mx-auto mt-6">
-      {/* 타이틀 */}
-      <div className="flex gap-2 pl-3 mb-4">
-        <MessageSquareMore className="size-8 text-zinc-200 mt-0.5" />
-        <div className="flex font-semibold text-lg text-neutral-400 mt-1 gap-1">
-          <p>댓글</p>
-          <p className="font-bold text-white">{totalCount}</p>개
+    <section className="w-full max-w-4xl mx-auto space-y-10 pb-20">
+      {/* 섹션 헤더 */}
+      <div className="flex items-center gap-3 px-1">
+        <div className="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+          <MessageSquareMore className="size-6 text-emerald-400" />
         </div>
+        <h3 className="font-bold text-2xl tracking-tight flex items-center gap-2 text-zinc-100">
+          댓글
+          <span className="text-emerald-500 text-base font-bold bg-emerald-500/10 px-3 py-0.5 rounded-full border border-emerald-500/20">
+            {totalCount}
+          </span>
+        </h3>
       </div>
 
-      {/* 입력 */}
-      <div className="bg-zinc-950/80 border border-zinc-800 p-4 rounded-xl shadow-lg mb-5">
+      {/* 댓글 입력창 (UI 개선: 여백 및 가독성 최적화) */}
+      <div className="relative bg-[#161618] border border-white/5 rounded-4xl p-6 shadow-2xl transition-all focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20">
         <Textarea
           ref={newCommentRef}
           onKeyDown={handleKeyDown}
-          placeholder="댓글을 입력해주세요... ✨"
-          className="min-h-[90px] bg-zinc-900 text-zinc-100 border border-zinc-700 rounded-xl focus:ring-2 focus:ring-zinc-500"
+          placeholder="인사이트에 대한 의견을 자유롭게 남겨주세요... ✨"
+          className="min-h-[120px] w-full bg-transparent text-zinc-100 border-none rounded-2xl focus-visible:ring-0 resize-none text-[16px] leading-relaxed placeholder:text-zinc-600 p-2 pl-4"
         />
 
-        <div className="flex justify-end mt-3">
+        <div className="flex justify-end mt-4 pt-4 border-t border-white/5">
           <Button
-            onClick={() => {
-              const text = newCommentRef.current?.value?.trim();
-              if (!text) return toast.warning('댓글 내용을 입력하세요.');
-
-              if (preventDoubleSubmit) return;
-
-              setPreventDoubleSubmit(true);
-
-              addCommentMutation.mutate(text, {
-                onSuccess: () => {
-                  toast.success('댓글이 등록되었습니다.');
-                  if (newCommentRef.current) newCommentRef.current.value = '';
-                  setPreventDoubleSubmit(false);
-                },
-                onError: () => {
-                  toast.error('댓글 등록 중 오류가 발생했습니다.');
-                  setPreventDoubleSubmit(false);
-                },
-              });
-            }}
+            onClick={handleSubmit}
             disabled={addCommentMutation.isPending}
-            className="bg-emerald-500 hover:bg-emerald-400 text-white rounded-lg shadow-md"
+            className="h-11 px-8 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-sm rounded-2xl transition-all shadow-lg shadow-emerald-500/10 active:scale-95"
           >
-            {addCommentMutation.isPending ? '등록중...' : '등록'}
+            {addCommentMutation.isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              '등록하기'
+            )}
           </Button>
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-white/5" />
 
-      {/* 리스트 */}
-      <div className="mt-6 space-y-4">
+      {/* 댓글 리스트 영역 */}
+      <div className="space-y-6">
         {status === 'pending' ? (
-          <p className="text-zinc-600 text-center">불러오는 중...</p>
+          <div className="flex justify-center py-20">
+            <Loader2 className="size-8 text-emerald-500/30 animate-spin" />
+          </div>
         ) : comments.length === 0 ? (
-          <p className="text-zinc-600 text-center">등록된 댓글이 없습니다. 🚀</p>
+          <div className="text-center py-24 bg-zinc-900/20 rounded-[40px] border border-dashed border-white/5">
+            <p className="text-zinc-500 font-medium tracking-tight">
+              아직 등록된 댓글이 없습니다. 첫 의견의 주인공이 되어보세요! 🚀
+            </p>
+          </div>
         ) : (
-          comments.map((c) => {
-            const isOwner = c.user_id === currentUser?.id;
+          <div className="grid gap-6">
+            {comments.map((c) => {
+              const isOwner = c.user_id === user?.id;
 
-            return (
-              <article
-                key={c.id}
-                className={`p-4 rounded-xl transition-all shadow-lg ${
-                  isOwner
-                    ? 'bg-zinc-900 border border-transparent ring-1 ring-zinc-500/40'
-                    : 'bg-zinc-900 border border-zinc-800'
-                }`}
-              >
-                <header className="flex justify-between items-center mb-3">
-                  <div className="flex gap-3 items-center">
-                    <CircleUserRound className="size-6 text-zinc-400" />
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium text-white flex items-center gap-1.5">
-                        {c.email || 'Anonymous'}
-                        {isOwner && (
-                          <span className="text-[10px] text-emerald-400 bg-emerald-900/30 px-2 rounded-full">
-                            작성자
+              return (
+                <article
+                  key={c.id}
+                  className={`group relative p-5 md:p-7 rounded-[36px] transition-all duration-300 ${
+                    isOwner
+                      ? 'bg-[#1a1a1c] border border-emerald-500/20 shadow-xl'
+                      : 'bg-[#121214] border border-white/5 hover:border-white/10'
+                  }`}
+                >
+                  <header className="flex justify-between items-start mb-4">
+                    <div className="flex gap-4 items-center">
+                      <div className="p-3 rounded-2xl bg-zinc-800/50 border border-white/5 text-zinc-400">
+                        <CircleUserRound className="size-6" />
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-[15px] font-bold text-zinc-100">
+                            {c.email?.split('@')[0] || '익명 사용자'}
                           </span>
-                        )}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        {new Date(c.created_at).toLocaleString()}
-                      </p>
+                          {isOwner && (
+                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-lg border border-emerald-400/20">
+                              작성자
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-zinc-500 font-medium">
+                          {dayjs(c.created_at).fromNow()}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  {isOwner && (
-                    <AppDeleteDialog
-                      onConfirm={() => deleteCommentMutation.mutate(c.id)}
-                      title="댓글을 삭제하시겠습니까?"
-                      description="이 댓글은 복구할 수 없습니다."
-                    />
-                  )}
-                </header>
+                    {isOwner && (
+                      <div className="opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                        <AppDeleteDialog
+                          onConfirm={() => deleteCommentMutation.mutate(c.id)}
+                          title="의견 삭제"
+                          description="작성하신 댓글을 영구적으로 삭제하시겠습니까?"
+                        />
+                      </div>
+                    )}
+                  </header>
 
-                <p className="mt-3 text-zinc-100 whitespace-pre-wrap">{c.content}</p>
-              </article>
-            );
-          })
+                  <p className="text-[16px] leading-[1.7] text-zinc-300 whitespace-pre-wrap px-1">
+                    {c.content}
+                  </p>
+                </article>
+              );
+            })}
+          </div>
         )}
       </div>
 
-      {/* 더보기 */}
+      {/* 무한 스크롤 트리거 & 더보기 버튼 */}
       {hasNextPage && (
-        <div ref={loaderRef} className="flex justify-center py-6">
+        <div ref={loaderRef} className="flex justify-center pt-12">
           <Button
             onClick={() => fetchNextPage()}
-            variant="outline"
-            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white"
+            variant="ghost"
+            className="group flex flex-col gap-3 h-auto hover:bg-transparent text-zinc-500 hover:text-emerald-400 transition-all font-bold text-xs tracking-widest"
           >
-            <p className="pl-2">더보기</p>
-            <ChevronsDown />
+            <span className="uppercase">더 많은 의견 불러오기</span>
+            <ChevronsDown className="size-5 animate-bounce group-hover:animate-none" />
           </Button>
         </div>
       )}

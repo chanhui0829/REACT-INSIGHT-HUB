@@ -1,60 +1,39 @@
-<svg width="220" height="60" viewBox="0 0 220 60" xmlns="http://www.w3.org/2000/svg">
+<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="greenGradient" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#34d399"/>
-      <stop offset="100%" stop-color="#22c55e"/>
+    <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2DD4BF"/>
+      <stop offset="100%" stop-color="#10B981"/>
     </linearGradient>
-
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
+    
+    <filter id="ultraGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
     </filter>
   </defs>
 
-  <!-- 아이콘 (살짝 축소됨) -->
-  <g transform="translate(4,8) scale(0.8)" filter="url(#glow)">
-
-    <!-- 전구 몸통 -->
-    <path d="M25 6C16 6 10 12 10 20C10 25 13 29 16 32C18 34 19 36 19 38H31C31 36 32 34 34 32C37 29 40 25 40 20C40 12 34 6 25 6Z"
-          fill="url(#greenGradient)"/>
-
-    <!-- 내부 빛 -->
-    <circle cx="25" cy="22" r="4" fill="#bbf7d0"/>
-
-    <!-- 상단 꼬다리 -->
-    <line x1="25" y1="6" x2="25" y2="2" stroke="#34d399" stroke-width="2"/>
-    <circle cx="25" cy="2" r="2" fill="#34d399"/>
-
-    <!-- 왼쪽 위 -->
-    <line x1="16" y1="12" x2="10" y2="8" stroke="#34d399" stroke-width="2"/>
-    <circle cx="10" cy="8" r="2" fill="#34d399"/>
-
-    <!-- 오른쪽 위 -->
-    <line x1="34" y1="12" x2="40" y2="8" stroke="#34d399" stroke-width="2"/>
-    <circle cx="40" cy="8" r="2" fill="#34d399"/>
-
-    <!-- 왼쪽 -->
-    <line x1="12" y1="20" x2="5" y2="20" stroke="#34d399" stroke-width="2"/>
-    <circle cx="5" cy="20" r="2" fill="#34d399"/>
-
-    <!-- 오른쪽 -->
-    <line x1="38" y1="20" x2="45" y2="20" stroke="#34d399" stroke-width="2"/>
-    <circle cx="45" cy="20" r="2" fill="#34d399"/>
-
-    <!-- 전구 소켓 -->
-    <rect x="19" y="38" width="12" height="6" rx="2" fill="#22c55e"/>
-    <rect x="21" y="45" width="8" height="4" rx="1.5" fill="#16a34a"/>
+  <g transform="translate(20, 15)">
+    <circle cx="45" cy="40" r="35" fill="#10B981" fill-opacity="0.08"/>
+    
+    <g filter="url(#ultraGlow)">
+      <path d="M45 10C34.5 10 26 18.5 26 29C26 35.5 29.5 41 34.5 44.5C37.5 46.5 38.5 49 38.5 52H51.5C51.5 49 52.5 46.5 55.5 44.5C60.5 41 64 35.5 64 29C64 18.5 55.5 10 45 10Z" 
+            fill="url(#brandGradient)"/>
+      
+      <circle cx="45" cy="29" r="7.5" fill="#FFFFFF"/>
+      
+      <rect x="39.5" y="54" width="11" height="4" rx="2" fill="#059669"/>
+      <rect x="41.5" y="60" width="7" height="4" rx="2" fill="#047857"/>
+    </g>
   </g>
 
-  <!-- 텍스트 -->
-  <text x="56" y="38" font-family="Inter, sans-serif" font-size="22" font-weight="600" fill="#e5e7eb">
-    Insight
-  </text>
+  <g transform="translate(105, 68)">
+    <text x="0" y="0" font-family="'Inter', sans-serif" font-size="48" font-weight="950" fill="#F8FAFC" letter-spacing="-0.08em">
+      Insight
+    </text>
+    
+    <text x="130" y="0" font-family="'Inter', sans-serif" font-size="48" font-weight="950" fill="url(#brandGradient)" letter-spacing="-0.08em">
+      Hub
+    </text>
 
-  <text x="124" y="38" font-family="Inter, sans-serif" font-size="22" font-weight="600" fill="url(#greenGradient)">
-    Hub
-  </text>
+    <rect x="130" y="12" width="85" height="6" rx="3" fill="url(#brandGradient)" fill-opacity="0.4"/>
+  </g>
 </svg>

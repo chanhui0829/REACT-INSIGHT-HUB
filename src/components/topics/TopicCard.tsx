@@ -1,3 +1,13 @@
+/**
+ * @file TopicCard.tsx
+ * @description 토픽 목록의 메인 카드 컴포넌트입니다.
+ * - 시각적 균형을 위해 제목 2줄, 본문 2줄로 제한 (Line-clamp)
+ * - BlockNote 데이터 구조를 위한 정교한 타입 정의 (any 제거)
+ * - transform-gpu 및 will-change를 통한 스크롤 성능 최적화
+ */
+
+'use client';
+
 import { memo, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import dayjs from 'dayjs';
@@ -5,126 +15,143 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ko';
 
 import { useQuery } from '@tanstack/react-query';
+import { Eye, Heart, Layers } from 'lucide-react';
 
-// UI & Icons
 import { Card, Separator } from '../ui';
-import { CaseSensitive, Eye, Heart } from 'lucide-react';
-
-// types & utils
 import type { Topic } from '@/types/topic.type';
 import { QUERY_KEYS } from '@/constants/querykey.constant';
-import { getUserNickname } from '@/services/user.service';
+import { getUserNickname } from '@/services/useService';
 
 dayjs.extend(relativeTime);
 dayjs.locale('ko');
 
-// ------------------------------
-// 🔹 텍스트 파싱 함수
-// ------------------------------
-function extractTextFromContent(content: string | [], maxChars = 200) {
+// -----------------------------------------------------------------------------
+// 🔹 1. 정교한 타입 정의 (Portfolio Quality)
+// -----------------------------------------------------------------------------
+interface ContentChild {
+  text?: string;
+}
+
+interface ContentBlock {
+  content?: ContentChild[];
+}
+
+/**
+ * @function extractTextFromContent
+ * @description JSON 구조의 본문 데이터에서 순수 텍스트만 추출하여 미리보기를 생성합니다.
+ */
+const extractTextFromContent = (content: string | ContentBlock[], maxChars = 140): string => {
   try {
     const parsed = typeof content === 'string' ? JSON.parse(content) : content;
     if (!Array.isArray(parsed)) return '';
 
     let result = '';
-    for (const block of parsed) {
-      if (Array.isArray(block.content)) {
+    for (const block of parsed as ContentBlock[]) {
+      if (block.content && Array.isArray(block.content)) {
         for (const child of block.content) {
-          if (child?.text) {
-            result += child.text + ' ';
-            if (result.length >= maxChars) return result.slice(0, maxChars) + '...';
-          }
+          if (child.text) result += child.text + ' ';
         }
       }
+      if (result.length >= maxChars) break;
     }
-    return result.trim();
+
+    const trimmed = result.trim();
+    return trimmed.length > maxChars ? `${trimmed.slice(0, maxChars)}...` : trimmed;
   } catch {
     return '';
   }
-}
+};
 
-// ------------------------------
-// 🔹 유저 닉네임 조회
-// ------------------------------
-
-// ------------------------------
-// 🔹 TopicCard 컴포넌트
-// ------------------------------
 interface Props {
   props: Topic;
 }
 
-function TopicCardComponent({ props }: Props) {
+// -----------------------------------------------------------------------------
+// 🔹 2. Main Component
+// -----------------------------------------------------------------------------
+const TopicCardComponent = ({ props }: Props) => {
   const navigate = useNavigate();
 
   const handleNavigate = useCallback(() => {
     navigate(`/topics/${props.id}/detail`);
   }, [navigate, props.id]);
 
+  // 본문 미리보기 메모이제이션
   const previewText = useMemo(() => extractTextFromContent(props.content), [props.content]);
 
-  // 🔥 닉네임 Query (여기만 수정)
-  const { data: nickname = '' } = useQuery({
+  // 작성자 정보 페칭
+  const { data: nickname = 'User' } = useQuery({
     queryKey: QUERY_KEYS.user.profile(props.author),
     queryFn: () => getUserNickname(props.author),
+    staleTime: 1000 * 60 * 10, // 10분 캐싱
   });
 
   return (
     <Card
-      className="w-full h-60 p-4 gap-4 cursor-pointer hover:scale-[1.01] transition-all duration-200 flex flex-col"
       onClick={handleNavigate}
+      className="
+        group relative w-full p-5 
+        bg-[#121214] border-white/5 
+        hover:border-emerald-500/40 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)]
+        transition-all duration-300 cursor-pointer overflow-hidden
+        flex flex-col transform-gpu will-change-transform
+      "
     >
-      {/* 상단 */}
-      <div className="flex items-start gap-4 flex-1">
-        {/* 왼쪽 텍스트 영역 */}
-        <div className="flex-1 flex flex-col justify-between">
-          <div className="flex flex-col gap-2">
-            <CaseSensitive size={16} className="text-muted-foreground shrink-0" />
-
-            <h3 className="text-base font-semibold tracking-tight line-clamp-2 leading-snug">
-              {props.title}
-            </h3>
-
-            <p className="line-clamp-3 text-muted-foreground text-sm leading-relaxed">
-              {previewText}
-            </p>
+      {/* 🔹 상단: 텍스트 정보 & 썸네일 밸런스 */}
+      <div className="flex gap-5 items-start flex-1 min-h-[120px]">
+        <div className="flex-1 flex flex-col gap-2.5 min-w-0">
+          {/* 카테고리 태그 */}
+          <div className="flex items-center gap-1.5">
+            <Layers size={12} className="text-emerald-500" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500/80">
+              {props.category}
+            </span>
           </div>
+
+          {/* 타이틀 (2줄 제한) */}
+          <h3 className="text-lg font-bold tracking-tight text-zinc-100 line-clamp-2 leading-[1.4] group-hover:text-emerald-400 transition-colors">
+            {props.title}
+          </h3>
+
+          {/* 본문 미리보기 (2줄 제한으로 썸네일과 높이 균형 조정) */}
+          <p className="text-sm text-zinc-400 line-clamp-2 leading-relaxed">{previewText}</p>
         </div>
 
-        {/* 이미지 */}
-        <img
-          src={props.thumbnail ?? '/assets/default-thumbnail.png'}
-          alt="@THUMBNAIL"
-          className="w-[140px] h-[140px] aspect-square rounded-lg object-cover shrink-0"
-        />
+        {/* 썸네일: 비율과 크기 고정 */}
+        <div className="relative shrink-0 w-[110px] h-[110px] rounded-xl overflow-hidden border border-white/5 bg-zinc-950">
+          <img
+            src={props.thumbnail ?? '/assets/default-thumbnail.png'}
+            alt="thumbnail"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        </div>
       </div>
 
-      <Separator />
+      {/* 🔹 하단: 메타 정보 */}
+      <div className="mt-5 space-y-4">
+        <Separator className="bg-white/5" />
 
-      {/* 하단 */}
-      <div className="w-full flex justify-between items-start text-sm">
-        <div className="flex flex-col text-gray-400">
-          <p className="font-semibold text-white ">{nickname}</p>
-          <p className="text-gray-500 text-xs">{props.category}</p>
-        </div>
-
-        <div className="flex flex-col items-end text-white">
-          <div className="flex gap-2 text-xs mb-1">
-            <p className="flex items-center gap-1">
-              <Eye size={14} className="text-gray-400" />
-              <span>{props.views}</span>
-            </p>
-            <Separator orientation="vertical" className="h-4" />
-            <p className="flex items-center gap-1">
-              <Heart color="#ef4444" fill="#ef4444" size={14} />
-              <span>{props.likes}</span>
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col">
+            <span className="text-[13px] font-bold text-zinc-200">{nickname}</span>
+            <span className="text-[11px] text-zinc-500">{dayjs(props.created_at).fromNow()}</span>
           </div>
-          <p className="text-xs text-gray-400">{dayjs(props.created_at).fromNow()}</p>
+
+          <div className="flex items-center gap-3 bg-zinc-900/80 px-3 py-1.5 rounded-full border border-white/10">
+            <div className="flex items-center gap-1.5 text-zinc-400">
+              <Eye size={13} />
+              <span className="text-[11px] font-medium">{props.views}</span>
+            </div>
+            <div className="w-px h-2.5 bg-zinc-800" />
+            <div className="flex items-center gap-1.5 text-rose-500">
+              <Heart size={13} className="fill-rose-500/10" />
+              <span className="text-[11px] font-bold">{props.likes}</span>
+            </div>
+          </div>
         </div>
       </div>
     </Card>
   );
-}
+};
 
 export const TopicCard = memo(TopicCardComponent);
