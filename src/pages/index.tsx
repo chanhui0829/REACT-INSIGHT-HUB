@@ -150,7 +150,7 @@ function App() {
         <div className="flex items-center gap-2 p-3 rounded-full bg-zinc-900/90 backdrop-blur-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <Button
             onClick={handleRoute}
-            className="rounded-full h-12 px-7! bg-red-500 hover:bg-red-400 text-zinc-800 font-black text-xs uppercase tracking-widest flex gap-2 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,95,71,0.6)]"
+            className="rounded-full h-12 px-7! bg-amber-300 hover:bg-amber-200 text-zinc-800 font-black text-xs uppercase tracking-widest flex gap-2 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,235,59,0.4)]"
           >
             <PencilLine size={16} />새 토픽 작성
           </Button>
