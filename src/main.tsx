@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './index.css';
@@ -12,15 +12,16 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 
 // 🔥 Layout + Pages
-import RootLayout from '@/pages/layout';
-import App from '@/pages';
-import SignUp from '@/pages/sign-up';
-import SignIn from '@/pages/sign-in';
-import AuthCallback from '@/pages/auth/callback';
-import CreateTopic from '@/pages/topics/[topic_id]/create';
-import TopicDetail from '@/pages/topics/[topic_id]/detail';
-import CaseStudy from '@/pages/case-study';
 import ScrollToTop from './components/common/ScrollToTop';
+
+const RootLayout = lazy(() => import('@/pages/layout'));
+const App = lazy(() => import('@/pages'));
+const SignUp = lazy(() => import('@/pages/sign-up'));
+const SignIn = lazy(() => import('@/pages/sign-in'));
+const AuthCallback = lazy(() => import('@/pages/auth/callback'));
+const CreateTopic = lazy(() => import('@/pages/topics/[topic_id]/create'));
+const TopicDetail = lazy(() => import('@/pages/topics/[topic_id]/detail'));
+const CaseStudy = lazy(() => import('@/pages/case-study'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,20 +39,22 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <ScrollToTop />
-          <Routes>
-            <Route element={<RootLayout />}>
-              <Route index element={<App />} />
-              <Route path="sign-up" element={<SignUp />} />
-              <Route path="sign-in" element={<SignIn />} />
-              <Route path="auth/callback" element={<AuthCallback />} />
-              <Route path="topics">
-                <Route path="create" element={<CreateTopic />} />
-                <Route path="create/:id" element={<CreateTopic />} />
-                <Route path=":id/detail" element={<TopicDetail />} />
+          <Suspense fallback={<div className="min-h-screen bg-[#0a0a0a]" />}>
+            <Routes>
+              <Route element={<RootLayout />}>
+                <Route index element={<App />} />
+                <Route path="sign-up" element={<SignUp />} />
+                <Route path="sign-in" element={<SignIn />} />
+                <Route path="auth/callback" element={<AuthCallback />} />
+                <Route path="topics">
+                  <Route path="create" element={<CreateTopic />} />
+                  <Route path="create/:id" element={<CreateTopic />} />
+                  <Route path=":id/detail" element={<TopicDetail />} />
+                </Route>
+                <Route path="case-study" element={<CaseStudy />} />
               </Route>
-              <Route path="case-study" element={<CaseStudy />} />
-            </Route>
-          </Routes>
+            </Routes>
+          </Suspense>
         </BrowserRouter>
 
         <Toaster richColors position="top-center" />

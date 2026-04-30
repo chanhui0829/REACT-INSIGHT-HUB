@@ -5,10 +5,11 @@
  * TanStack Query의 Prefetching을 활용한 고성능 페이지네이션을 구현했습니다.
  */
 
-import { useMemo, useCallback, useEffect } from 'react';
+import { useMemo, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import { Funnel, NotebookPen, PencilLine, Search, Sparkles, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 // —————————————————————————————————————————————————————————————————————————————
 // Stores & Hooks
@@ -16,6 +17,7 @@ import { Funnel, NotebookPen, PencilLine, Search, Sparkles, Loader2 } from 'luci
 import { useAuthStore } from '@/stores';
 import { useTopicList, usePrefetchTopics } from '@/hooks/useTopic';
 import { SORT_CATEGORY } from '@/constants/sort.constant';
+import { getUserNicknames } from '@/services/useService';
 
 // —————————————————————————————————————————————————————————————————————————————
 // UI Components
@@ -52,6 +54,7 @@ function App() {
   const sortOption = searchParams.get('sort') ?? 'latest';
   const currentPage = Number(searchParams.get('page')) || 1;
   const searchQuery = searchParams.get('q') ?? '';
+  const [searchInput, setSearchInput] = useState(searchQuery);
 
   // 페이지당 아이템 수 및 데이터 범위 계산
   const ITEMS_PER_PAGE = 8;
@@ -76,6 +79,14 @@ function App() {
 
   const topics = data?.topics ?? [];
   const totalPages = Math.ceil((data?.total ?? 0) / ITEMS_PER_PAGE);
+  const authorIds = useMemo(() => topics.map((topic) => topic.author), [topics]);
+
+  const { data: nicknameMap = {} } = useQuery({
+    queryKey: ['user', 'nicknames', [...authorIds].sort().join(',')],
+    queryFn: () => getUserNicknames(authorIds),
+    enabled: authorIds.length > 0,
+    staleTime: 1000 * 60 * 10,
+  });
 
   // —————————————————————————————————————————————————————————————————————————————
   // Handlers
@@ -100,18 +111,30 @@ function App() {
     [setSearchParams]
   );
 
-  const handleSearch = useCallback(
-    (value: string) => {
-      const trimmed = value.trim();
-      if (trimmed.length > 0 && trimmed.length < 2) {
-        toast.warning('검색어를 두 글자 이상 입력해주세요.');
-        return;
-      }
-      // 검색 시 페이지를 1로 리셋
+  useEffect(() => {
+    setSearchInput(searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const debounced = window.setTimeout(() => {
+      const trimmed = searchInput.trim();
+      if (trimmed.length > 0 && trimmed.length < 2) return;
+      if (trimmed === searchQuery) return;
       updateParams({ q: trimmed, page: '1' });
-    },
-    [updateParams]
-  );
+    }, 300);
+
+    return () => window.clearTimeout(debounced);
+  }, [searchInput, searchQuery, updateParams]);
+
+  const handleSearch = useCallback(() => {
+    const trimmed = searchInput.trim();
+    if (trimmed.length > 0 && trimmed.length < 2) {
+      toast.warning('검색어를 두 글자 이상 입력해주세요.');
+      return;
+    }
+    if (trimmed === searchQuery) return;
+    updateParams({ q: trimmed, page: '1' });
+  }, [searchInput, searchQuery, updateParams]);
 
   const handleCategoryChange = useCallback(
     (value: string) => {
@@ -159,6 +182,7 @@ function App() {
             <Button
               variant="outline"
               size="icon"
+              aria-label="임시 저장 토픽 열기"
               className="rounded-full w-12 h-12 hover:bg-white/10 transition-colors"
             >
               <NotebookPen className="w-5 h-5 text-zinc-400" />
@@ -200,16 +224,16 @@ function App() {
             <div className="relative flex items-center h-15 px-6 gap-3 rounded-full border border-white/10 bg-zinc-900/50 backdrop-blur-2xl focus-within:border-emerald-500/40 transition-all ">
               <Search className="w-6 h-6 text-zinc-600" />
               <Input
-                defaultValue={searchQuery}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch(e.currentTarget.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.currentTarget.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="지식과 코드를 검색하세요."
+                aria-label="토픽 검색어 입력"
                 className="flex-1 h-10 border-none! bg-transparent! text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-0"
               />
               <Button
-                onClick={(e) => {
-                  const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                  handleSearch(input.value);
-                }}
+                onClick={handleSearch}
+                aria-label="검색 실행"
                 className="h-9 px-6 rounded-full bg-gray-300 hover:bg-gray-200 text-zinc-950 font-black text-xs tracking-tight shadow-xl transition-all active:scale-95"
               >
                 검색
@@ -271,7 +295,7 @@ function App() {
                   key={topic.id}
                   className="group transition-all duration-500 hover:translate-y-1"
                 >
-                  <TopicCard props={topic} />
+                  <TopicCard props={topic} authorNickname={nicknameMap[topic.author]} />
                 </div>
               ))}
             </div>
@@ -285,6 +309,8 @@ function App() {
                 <PaginationItem>
                   <PaginationPrevious
                     href="#"
+                    aria-label="이전 페이지"
+                    role="button"
                     className="hover:bg-white/5 rounded-2xl px-4 text-xs font-bold text-zinc-500"
                     onClick={(e) => {
                       e.preventDefault();
@@ -296,6 +322,8 @@ function App() {
                   <PaginationItem key={page}>
                     <PaginationLink
                       href="#"
+                      aria-label={`${page}페이지로 이동`}
+                      role="button"
                       isActive={page === currentPage}
                       className={`rounded-2xl w-10 h-10 text-xs font-black transition-all ${
                         page === currentPage
@@ -314,6 +342,8 @@ function App() {
                 <PaginationItem>
                   <PaginationNext
                     href="#"
+                    aria-label="다음 페이지"
+                    role="button"
                     className="hover:bg-white/5 rounded-2xl px-4 text-xs font-bold text-zinc-500"
                     onClick={(e) => {
                       e.preventDefault();

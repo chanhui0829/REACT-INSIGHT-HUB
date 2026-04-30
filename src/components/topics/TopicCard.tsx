@@ -14,13 +14,10 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ko';
 
-import { useQuery } from '@tanstack/react-query';
 import { Eye, Heart, Layers } from 'lucide-react';
 
 import { Card, Separator } from '../ui';
 import type { Topic } from '@/types/topic.type';
-import { QUERY_KEYS } from '@/constants/querykey.constant';
-import { getUserNickname } from '@/services/useService';
 
 dayjs.extend(relativeTime);
 dayjs.locale('ko');
@@ -64,12 +61,13 @@ const extractTextFromContent = (content: string | ContentBlock[], maxChars = 140
 
 interface Props {
   props: Topic;
+  authorNickname?: string;
 }
 
 // -----------------------------------------------------------------------------
 // 🔹 2. Main Component
 // -----------------------------------------------------------------------------
-const TopicCardComponent = ({ props }: Props) => {
+const TopicCardComponent = ({ props, authorNickname }: Props) => {
   const navigate = useNavigate();
 
   const handleNavigate = useCallback(() => {
@@ -78,13 +76,6 @@ const TopicCardComponent = ({ props }: Props) => {
 
   // 본문 미리보기 메모이제이션
   const previewText = useMemo(() => extractTextFromContent(props.content), [props.content]);
-
-  // 작성자 정보 페칭
-  const { data: nickname = 'User' } = useQuery({
-    queryKey: QUERY_KEYS.user.profile(props.author),
-    queryFn: () => getUserNickname(props.author),
-    staleTime: 1000 * 60 * 10, // 10분 캐싱
-  });
 
   return (
     <Card
@@ -133,7 +124,9 @@ const TopicCardComponent = ({ props }: Props) => {
 
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-[13px] font-bold text-zinc-200">{nickname}</span>
+            <span className="text-[13px] font-bold text-zinc-200">
+              {authorNickname ?? '알 수 없는 사용자'}
+            </span>
             <span className="text-[11px] text-zinc-500">{dayjs(props.created_at).fromNow()}</span>
           </div>
 

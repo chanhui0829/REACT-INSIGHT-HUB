@@ -50,13 +50,43 @@
   - 마운트 시 구독, 언마운트 시 `unsubscribe()` 보장
   - 댓글/좋아요 이벤트를 각 전용 핸들러 훅에 연결
 
-## Lazy Load 적용 여부
+## 1일차 작업 요약
 
-- 이번 작업 범위에서는 **lazy load를 실제 코드에 적용하지 않았다**.
-- 즉, `React.lazy`/`Suspense`를 적용한 파일은 현재 없다.
-- Lazy load는 다음 단계(라우트 분할 최적화)로 분리해 진행 예정.
+- 실시간 댓글/좋아요 동기화 기반 구조 도입
+- 캐시 정합성 보강(optimistic update, rollback, dedupe)
+- 구독 생명주기 정리(구독/해제)
 
-## 검증
+## 2일차 작업 - 라우트 Lazy Load 적용
+##            N+1 쿼리 제거 (작성자 닉네임 배치 조회)
 
-- `npm run build` 통과 (TypeScript 에러 없음)
-- 수정된 파일 기준 linter 에러 없음
+### `src/main.tsx`
+
+- **잠재 치명 버그/리스크**
+  - 모든 페이지를 정적 import하면 초기 번들 과대화로 첫 진입 지연, 저사양/저속 네트워크 환경에서 체감 성능 급락 가능
+- **개선 내용**
+  - 페이지 컴포넌트를 `lazy(() => import(...))`로 전환
+  - 라우트 렌더링 구간을 `Suspense`로 감싸 fallback UI 제공
+
+### `src/pages/index.tsx`
+
+- **잠재 치명 버그/리스크**
+  - 토픽 카드 수만큼 작성자 닉네임 조회가 발생하면 목록 스크롤/페이지 전환 시 네트워크 병목 가능
+- **개선 내용**
+  - 토픽 목록의 `author` ID를 수집해 단일 배치 조회로 전환
+  - 조회된 닉네임 맵을 카드로 전달해 렌더링
+
+### `src/components/topics/TopicCard.tsx`
+
+- **잠재 치명 버그/리스크**
+  - 카드 내부 개별 `useQuery`가 반복되면 카드 수 증가 시 요청 수가 선형 증가(N+1)
+- **개선 내용**
+  - 카드 내부 닉네임 조회 로직 제거
+  - `authorNickname` prop 기반의 순수 렌더 컴포넌트로 단순화
+
+### `src/services/useService.ts`
+
+- **잠재 치명 버그/리스크**
+  - 단건 닉네임 조회 API만 존재하면 목록 페이지 성능 최적화 한계
+- **개선 내용**
+  - `getUserNicknames(ids)` 추가
+  - `user` 테이블 `in('id', uniqueIds)` 조회 후 `{ [id]: nickname }` 형태로 반환

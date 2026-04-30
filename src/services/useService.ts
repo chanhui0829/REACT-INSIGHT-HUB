@@ -7,3 +7,17 @@ export const getUserNickname = async (id: string): Promise<string> => {
 
   return data.email.split('@')[0] + '님';
 };
+
+export const getUserNicknames = async (ids: string[]): Promise<Record<string, string>> => {
+  if (ids.length === 0) return {};
+
+  const uniqueIds = [...new Set(ids)];
+  const { data, error } = await supabase.from('user').select('id, email').in('id', uniqueIds);
+
+  if (error || !data) return {};
+
+  return data.reduce<Record<string, string>>((acc, row) => {
+    acc[row.id] = `${row.email.split('@')[0]}님`;
+    return acc;
+  }, {});
+};
