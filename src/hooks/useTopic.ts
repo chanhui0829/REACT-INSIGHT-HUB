@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { QUERY_KEYS } from '@/constants/querykey.constant';
 import {
   fetchTopicById,
@@ -9,6 +10,8 @@ import {
   deleteTopic,
 } from '@/services/topicService';
 import type { Topic } from '@/types/topic.type';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import type { TopicLikeRow } from '@/services/realtimeService';
 
 // ======================================================
 // 🔹 타입
@@ -192,4 +195,52 @@ export const useDeleteTopic = (topicId: number) => {
   return useMutation({
     mutationFn: () => deleteTopic(topicId),
   });
+};
+
+export const useTopicRealtimeHandlers = (topicId: number) => {
+  const queryClient = useQueryClient();
+
+  const patchLikes = useCallback(
+    (delta: 1 | -1) => {
+      queryClient.setQueryData<Topic | null>(QUERY_KEYS.topics.detail(topicId), (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          likes: Math.max(0, prev.likes + delta),
+        };
+      });
+    },
+    [queryClient, topicId]
+  );
+
+  const handleLikeInsert = useCallback(
+    (payload: RealtimePostgresChangesPayload<TopicLikeRow>) => {
+      const inserted = payload.new as TopicLikeRow | null;
+      const userId = inserted?.user_id;
+      if (!userId) return;
+
+      patchLikes(1);
+      queryClient.setQueryData<TopicLike[]>(QUERY_KEYS.likes.list(topicId), (prev = []) => {
+        if (prev.some((like) => like.user_id === userId)) return prev;
+        return [...prev, { user_id: userId }];
+      });
+    },
+    [patchLikes, queryClient, topicId]
+  );
+
+  const handleLikeDelete = useCallback(
+    (payload: RealtimePostgresChangesPayload<TopicLikeRow>) => {
+      const deleted = payload.old as Partial<TopicLikeRow> | null;
+      const userId = deleted?.user_id;
+      if (!userId) return;
+
+      patchLikes(-1);
+      queryClient.setQueryData<TopicLike[]>(QUERY_KEYS.likes.list(topicId), (prev = []) =>
+        prev.filter((like) => like.user_id !== userId)
+      );
+    },
+    [patchLikes, queryClient, topicId]
+  );
+
+  return { handleLikeInsert, handleLikeDelete };
 };

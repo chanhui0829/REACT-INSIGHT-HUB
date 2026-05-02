@@ -1,5 +1,14 @@
 import supabase from '@/lib/supabase';
 
+export type CommentItem = {
+  id: number;
+  topic_id: number;
+  user_id: string;
+  content: string;
+  created_at: string;
+  email?: string;
+};
+
 // 🔹 댓글 목록
 export const fetchComments = async (topicId: number, from: number, to: number) => {
   const { data, error } = await supabase
@@ -10,7 +19,7 @@ export const fetchComments = async (topicId: number, from: number, to: number) =
     .range(from, to);
 
   if (error) throw error;
-  return data;
+  return (data ?? []) as CommentItem[];
 };
 
 // 🔹 댓글 개수 조회
@@ -45,6 +54,18 @@ export const addComment = async (topicId: number, text: string) => {
   if (error) throw error;
 
   return { ...data, email: user.email };
+};
+
+// 🔹 댓글 단건 조회 (realtime insert 이벤트용)
+export const fetchCommentById = async (commentId: number): Promise<CommentItem | null> => {
+  const { data, error } = await supabase
+    .from('comment_user_view')
+    .select('*')
+    .eq('id', commentId)
+    .single();
+
+  if (error) throw error;
+  return (data as CommentItem) ?? null;
 };
 
 // 🔹 삭제

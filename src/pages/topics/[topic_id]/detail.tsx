@@ -17,7 +17,11 @@ import {
   useIncreaseViews,
   useToggleLike,
   useDeleteTopic,
+  useTopicRealtimeHandlers,
 } from '@/hooks/useTopic';
+import { useCommentRealtimeHandlers } from '@/hooks/useComment';
+import { subscribeTopicRealtime } from '@/services/realtimeService';
+import type { Block } from '@blocknote/core';
 
 const RELATED_TOPICS = [
   { id: 1, title: 'Next.js 14의 서버 컴포넌트 이해하기', date: '2026.04.10' },
@@ -25,6 +29,18 @@ const RELATED_TOPICS = [
   { id: 3, title: '2026년 프론트엔드 디자인 트렌드 분석', date: '2026.04.15' },
   { id: 4, title: 'TypeScript 5.0 신규 기능 살펴보기', date: '2026.04.18' },
 ];
+
+const parseEditorContent = (raw: string | Block[] | null | undefined): Block[] => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as Block[]) : [];
+  } catch {
+    return [];
+  }
+};
 
 export default function TopicDetail() {
   const { id } = useParams();
@@ -37,6 +53,8 @@ export default function TopicDetail() {
   const increaseViews = useIncreaseViews(topicId);
   const toggleLike = useToggleLike(topicId, user?.id);
   const deleteMutation = useDeleteTopic(topicId);
+  const { handleCommentInsert, handleCommentDelete } = useCommentRealtimeHandlers(topicId);
+  const { handleLikeInsert, handleLikeDelete } = useTopicRealtimeHandlers(topicId);
 
   const authorId = useMemo(() => {
     const targetEmail = user?.email || 'anonymous@insight.hub';
@@ -47,10 +65,28 @@ export default function TopicDetail() {
     () => likesData.some((row) => row.user_id === user?.id),
     [likesData, user?.id]
   );
+  const parsedContent = useMemo(() => parseEditorContent(topic?.content), [topic?.content]);
 
   useEffect(() => {
     if (topicId) increaseViews.mutate();
   }, [topicId]);
+
+  useEffect(() => {
+    if (!topicId) return;
+
+    const channel = subscribeTopicRealtime(topicId, {
+      onCommentInsert: (payload) => {
+        void handleCommentInsert(payload);
+      },
+      onCommentDelete: handleCommentDelete,
+      onLikeInsert: handleLikeInsert,
+      onLikeDelete: handleLikeDelete,
+    });
+
+    return () => {
+      void channel.unsubscribe();
+    };
+  }, [topicId, handleCommentInsert, handleCommentDelete, handleLikeInsert, handleLikeDelete]);
 
   const handleDelete = useCallback(async () => {
     try {
@@ -94,6 +130,7 @@ export default function TopicDetail() {
             <Button
               variant="ghost"
               size="icon"
+              aria-label="토픽 공유"
               className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-white "
             >
               <Share2 size={16} />
@@ -125,12 +162,7 @@ export default function TopicDetail() {
       <section className="w-full max-w-[1200px] mx-auto px-6 -mt-16 pb-32">
         <article className="relative z-10 bg-[#121214] border border-white/5 rounded-[48px] py-10 md:p-10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)]">
           <div className="prose prose-invert prose-emerald max-w-none min-h-[300px] leading-[1.9] text-zinc-300 text-[17px]">
-            <AppEditor
-              value={
-                typeof topic?.content === 'string' ? JSON.parse(topic.content) : topic?.content
-              }
-              readonly
-            />
+            <AppEditor value={parsedContent} readonly />
           </div>
 
           <div className="ml-10 mt-20 flex items-center justify-between">
@@ -141,6 +173,7 @@ export default function TopicDetail() {
               <button
                 disabled={toggleLike.isPending}
                 onClick={() => toggleLike.mutate()}
+                aria-label={isLiked ? '좋아요 취소' : '좋아요 추가'}
                 className={`flex items-center gap-2.5 px-7 py-3 rounded-2xl border transition-all font-bold text-xs active:scale-95 ${
                   isLiked
                     ? 'bg-rose-500 border-rose-400 text-white shadow-lg'

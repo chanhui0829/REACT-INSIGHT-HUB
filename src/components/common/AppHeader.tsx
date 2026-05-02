@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useState, useMemo } from 'react';
-import { NavLink, useNavigate, useSearchParams } from 'react-router';
+import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { CircleUserRound, Menu, X, LogOut, ChevronRight, LayoutGrid, BookText } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -28,6 +28,7 @@ const useAuthSelector = () =>
 
 function AppHeader() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const { user, reset } = useAuthSelector();
@@ -63,14 +64,14 @@ function AppHeader() {
       setSearchParams({ category: categoryValue });
 
       // 만약 메인 페이지가 아닌 곳에 있다면 메인으로 이동하며 파라미터 전달
-      if (window.location.pathname !== '/') {
+      if (location.pathname !== '/') {
         navigate(`/?category=${categoryValue}`);
       }
 
       // 모바일 메뉴 닫기
       setIsOpen(false);
     },
-    [setSearchParams, navigate]
+    [setSearchParams, navigate, location.pathname]
   );
 
   const toggleMenu = () => setIsOpen((prev) => !prev);
@@ -161,7 +162,10 @@ function AppHeader() {
           {/* ——— 모바일 토글 버튼 ——— */}
           <button
             onClick={toggleMenu}
-            className="flex md:hidden p-2 text-zinc-400 hover:text-white transition-colors"
+            aria-label={isOpen ? '모바일 메뉴 닫기' : '모바일 메뉴 열기'}
+            aria-controls="mobile-nav-drawer"
+            aria-expanded={isOpen}
+            className="flex md:hidden p-2 text-zinc-400 hover:text-white transition-colors min-w-11 min-h-11 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 rounded-xl"
           >
             {isOpen ? <X size={26} /> : <Menu size={26} />}
           </button>
@@ -182,13 +186,18 @@ function AppHeader() {
         />
 
         <div
+          id="mobile-nav-drawer"
           className={`
           absolute right-0 top-0 h-full w-[75%] max-w-[320px] bg-zinc-950 border-l border-white/5 p-6 shadow-2xl transition-transform duration-500 ease-out flex flex-col
           ${isOpen ? 'translate-x-0' : 'translate-x-full'}
         `}
         >
           <div className="flex justify-end mb-8">
-            <button onClick={closeMenu} className="p-2 text-zinc-500 hover:text-white">
+            <button
+              onClick={closeMenu}
+              aria-label="모바일 메뉴 닫기"
+              className="p-2 text-zinc-500 hover:text-white min-w-11 min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 rounded-xl"
+            >
               <X size={24} />
             </button>
           </div>

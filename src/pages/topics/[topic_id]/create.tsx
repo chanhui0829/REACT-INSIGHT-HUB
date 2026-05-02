@@ -45,6 +45,17 @@ import type { Block } from '@blocknote/core';
 
 type TopicInsertWithoutAuthor = Omit<Topic, 'id' | 'created_at' | 'author' | 'views' | 'likes'>;
 
+const parseEditorContent = (raw: string | null | undefined): Block[] => {
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as Block[]) : [];
+  } catch {
+    return [];
+  }
+};
+
 export default function CreateTopic() {
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
@@ -67,7 +78,7 @@ export default function CreateTopic() {
   useEffect(() => {
     if (!topic) return;
     setTitle(topic.title || '');
-    setContent(topic.content ? JSON.parse(topic.content) : []);
+    setContent(parseEditorContent(topic.content));
     setCategory(topic.category || '');
     setThumbnail(topic.thumbnail || null);
   }, [topic]);
@@ -92,17 +103,27 @@ export default function CreateTopic() {
     [content]
   );
 
+  const requireAuth = useCallback(() => {
+    if (user) return user.id;
+    toast.warning('로그인 후 작성/저장이 가능합니다.');
+    navigate('/sign-in');
+    return null;
+  }, [user, navigate]);
+
   const handleSave = useCallback(async () => {
     if (!title && !content.length && !category && !thumbnail) {
       toast.warning('최소 하나 이상의 값을 입력해주세요.');
       return;
     }
 
+    const userId = requireAuth();
+    if (!userId) return;
+
     try {
       // 1. 결과값 뒤에 'as { id: number | string }'을 붙여서 강제로 타입을 지정합니다.
       const savedTopic = (await saveMutation.mutateAsync({
         id,
-        userId: user!.id,
+        userId,
         buildPayload,
         thumbnail,
       })) as { id: number | string };
@@ -120,21 +141,25 @@ export default function CreateTopic() {
       console.error(err);
       toast.error('저장 중 오류가 발생했습니다.');
     }
-  }, [title, content, category, thumbnail, id, user, buildPayload, saveMutation, navigate]);
+  }, [title, content, category, thumbnail, id, buildPayload, saveMutation, navigate, requireAuth]);
   const handlePublish = useCallback(async () => {
     if (!title || !content.length || !category || !thumbnail) {
       toast.warning('필수 항목을 모두 입력해주세요.');
       return;
     }
+
+    const userId = requireAuth();
+    if (!userId) return;
+
     try {
-      await publishMutation.mutateAsync({ id, userId: user!.id, buildPayload, thumbnail });
+      await publishMutation.mutateAsync({ id, userId, buildPayload, thumbnail });
       toast.success('토픽이 발행되었습니다!');
       navigate('/');
     } catch (err) {
       console.error(err);
       toast.error('발행 중 오류가 발생했습니다.');
     }
-  }, [title, content, category, thumbnail, id, user, navigate, publishMutation, buildPayload]);
+  }, [title, content, category, thumbnail, id, navigate, publishMutation, buildPayload, requireAuth]);
 
   return (
     <main className="relative w-full max-w-7xl mx-auto pt-24 pb-32 px-6">
@@ -157,7 +182,7 @@ export default function CreateTopic() {
             <Button
               variant="secondary"
               onClick={handleSave}
-              disabled={saveMutation.isPending}
+              disabled={saveMutation.isPending || !user}
               className="
                 relative z-10 
                 rounded-full h-11 px-5 
@@ -176,7 +201,7 @@ export default function CreateTopic() {
 
           <Button
             onClick={handlePublish}
-            disabled={publishMutation.isPending}
+            disabled={publishMutation.isPending || !user}
             className="rounded-full h-10 px-8 bg-emerald-500 hover:bg-emerald-400 text-zinc-900 flex gap-2 transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)]"
           >
             <BookOpenCheck size={18} />
