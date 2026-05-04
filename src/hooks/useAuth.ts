@@ -4,13 +4,20 @@ import supabase from '@/lib/supabase';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
 // Zustand User 타입 변환 함수
-function mapUser(sessionUser: SupabaseUser | null) {
+async function mapUser(sessionUser: SupabaseUser | null) {
   if (!sessionUser) return null;
+
+  const { data: userData } = await supabase
+    .from('user')
+    .select('nickname')
+    .eq('id', sessionUser.id)
+    .single();
 
   return {
     id: sessionUser.id,
     email: sessionUser.email ?? '',
     role: sessionUser.role ?? '',
+    nickname: userData?.nickname,
   };
 }
 
@@ -21,8 +28,8 @@ export default function useAuthListener() {
 
   // Supabase User → Zustand User 변환
   const applyUser = useCallback(
-    (sessionUser: SupabaseUser | null) => {
-      const formatted = mapUser(sessionUser);
+    async (sessionUser: SupabaseUser | null) => {
+      const formatted = await mapUser(sessionUser);
       setUser(formatted);
     },
     [setUser]

@@ -39,11 +39,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <ScrollToTop />
         <Suspense fallback={<div className="min-h-screen bg-[#0a0a0a]" />}>
           <Routes>
+            <Route path="auth/callback" element={<AuthCallback />} />
             <Route element={<RootLayout />}>
               <Route index element={<App />} />
               <Route path="sign-up" element={<SignUp />} />
               <Route path="sign-in" element={<SignIn />} />
-              <Route path="auth/callback" element={<AuthCallback />} />
               <Route path="topics">
                 <Route path="create" element={<CreateTopic />} />
                 <Route path="create/:id" element={<CreateTopic />} />

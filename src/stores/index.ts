@@ -64,11 +64,18 @@ export const useAuthStore = create<AuthStore>()(
           return false;
         }
 
+        const { data: userData } = await supabase
+          .from('user')
+          .select('nickname')
+          .eq('id', data.user.id)
+          .single();
+
         set({
           user: {
             id: data.user.id,
             email: data.user.email ?? '',
             role: 'user',
+            nickname: userData?.nickname,
           },
           loading: false,
         });
