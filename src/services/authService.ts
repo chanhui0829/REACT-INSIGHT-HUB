@@ -28,7 +28,21 @@ export const signInWithGoogleService = async () => {
   });
 };
 
-// 약관 업데이트
+// 닉네임 중복 검사
+export const checkNickname = async (nickname: string): Promise<boolean> => {
+  const { data, error } = await supabase
+    .from('user')
+    .select('id')
+    .eq('nickname', nickname)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('닉네임 중복 검사 오류:', error);
+    return true;
+  }
+
+  return !!data;
+};
 export const updateUserAgreement = async (
   userId: string,
   serviceAgreed: boolean,

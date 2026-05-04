@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Asterisk, ChevronRight, UserPlus, Sparkles } from 'lucide-react';
 
 import { useAuthStore } from '@/stores';
+import { checkNickname } from '@/services/authService';
 import {
   Button,
   Checkbox,
@@ -27,6 +28,7 @@ import {
 // Zod Schema
 const formSchema = z
   .object({
+    nickname: z.string().min(2, '닉네임은 최소 2자 이상이어야 합니다.').max(20, '닉네임은 최대 20자까지 가능합니다.'),
     email: z.string().email('올바른 이메일 주소를 입력해주세요.'),
     password: z.string().min(8, '비밀번호는 최소 8자 이상이어야 합니다.'),
     confirmPassword: z.string().min(8, '비밀번호 확인을 입력해주세요.'),
@@ -52,17 +54,36 @@ export default function SignUp() {
   // React Hook Form 초기화
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { email: '', password: '', confirmPassword: '' },
+    defaultValues: { nickname: '', email: '', password: '', confirmPassword: '' },
   });
 
   // 약관 동의 상태
   const [serviceAgreed, setServiceAgreed] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [marketingAgreed, setMarketingAgreed] = useState(false);
+  const [nicknameError, setNicknameError] = useState('');
+  const [isCheckingNickname, setIsCheckingNickname] = useState(false);
 
   const handleCheckService = useCallback(() => setServiceAgreed((prev) => !prev), []);
   const handleCheckPrivacy = useCallback(() => setPrivacyAgreed((prev) => !prev), []);
   const handleCheckMarketing = useCallback(() => setMarketingAgreed((prev) => !prev), []);
+
+  const handleNicknameChange = useCallback(async (value: string) => {
+    if (value.length < 2) {
+      setNicknameError('');
+      return;
+    }
+
+    setIsCheckingNickname(true);
+    const isDuplicate = await checkNickname(value);
+    setIsCheckingNickname(false);
+
+    if (isDuplicate) {
+      setNicknameError('이미 사용 중인 닉네임입니다.');
+    } else {
+      setNicknameError('');
+    }
+  }, []);
 
   // 인증 상태 감지
   useEffect(() => {
@@ -76,13 +97,19 @@ export default function SignUp() {
       return;
     }
 
+    if (nicknameError) {
+      toast.error('닉네임 중복을 확인해주세요.');
+      return;
+    }
+
     try {
       const success = await signUp(
         values.email,
         values.password,
         serviceAgreed,
         privacyAgreed,
-        marketingAgreed
+        marketingAgreed,
+        values.nickname
       );
 
       if (success) {
@@ -125,6 +152,30 @@ export default function SignUp() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* 입력 필드 */}
               <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="nickname"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel className="text-slate-400 ml-1">닉네임</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="2자 이상 20자 이하"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            handleNicknameChange(e.target.value);
+                          }}
+                          className="h-12 rounded-2xl bg-slate-950/50 border-white/10 focus:border-purple-500/50 transition-all"
+                        />
+                      </FormControl>
+                      {nicknameError && <p className="text-xs text-red-400 ml-1">{nicknameError}</p>}
+                      {isCheckingNickname && <p className="text-xs text-slate-500 ml-1">중복 검사 중...</p>}
+                      <FormMessage className="text-xs text-red-400" />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="email"

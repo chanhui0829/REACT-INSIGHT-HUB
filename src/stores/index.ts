@@ -7,12 +7,13 @@ import {
   signOutService,
   updateUserAgreement,
 } from '@/services/authService';
+import supabase from '@/lib/supabase';
 
-// ------------------------------
 export interface User {
   id: string;
   email: string;
   role: string;
+  nickname?: string;
 }
 
 interface AuthStore {
@@ -30,7 +31,8 @@ interface AuthStore {
     password: string,
     serviceAgreed: boolean,
     privacyAgreed: boolean,
-    marketingAgreed: boolean
+    marketingAgreed: boolean,
+    nickname?: string
   ) => Promise<boolean>;
 }
 
@@ -74,7 +76,7 @@ export const useAuthStore = create<AuthStore>()(
         return true;
       },
 
-      signUp: async (email, password, serviceAgreed, privacyAgreed, marketingAgreed) => {
+      signUp: async (email, password, serviceAgreed, privacyAgreed, marketingAgreed, nickname) => {
         set({ loading: true, error: null });
 
         const { data, error } = await signUpService(email, password);
@@ -94,6 +96,17 @@ export const useAuthStore = create<AuthStore>()(
         if (updateError) {
           set({ loading: false });
           return false;
+        }
+
+        if (nickname) {
+          const { error: nicknameError } = await supabase
+            .from('user')
+            .update({ nickname })
+            .eq('id', data.user.id);
+
+          if (nicknameError) {
+            console.warn('닉네임 저장 실패:', nicknameError);
+          }
         }
 
         await signOutService();

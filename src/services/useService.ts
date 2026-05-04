@@ -1,23 +1,23 @@
 import supabase from '@/lib/supabase';
 
 export const getUserNickname = async (id: string): Promise<string> => {
-  const { data, error } = await supabase.from('user').select('email').eq('id', id).single();
+  const { data, error } = await supabase.from('user').select('nickname, email').eq('id', id).single();
 
   if (error || !data) return '알 수 없는 사용자';
 
-  return data.email.split('@')[0] + '님';
+  return data.nickname || `${data.email.split('@')[0]}님`;
 };
 
 export const getUserNicknames = async (ids: string[]): Promise<Record<string, string>> => {
   if (ids.length === 0) return {};
 
   const uniqueIds = [...new Set(ids)];
-  const { data, error } = await supabase.from('user').select('id, email').in('id', uniqueIds);
+  const { data, error } = await supabase.from('user').select('id, nickname, email').in('id', uniqueIds);
 
   if (error || !data) return {};
 
   return data.reduce<Record<string, string>>((acc, row) => {
-    acc[row.id] = `${row.email.split('@')[0]}님`;
+    acc[row.id] = row.nickname || `${row.email.split('@')[0]}님`;
     return acc;
   }, {});
 };
