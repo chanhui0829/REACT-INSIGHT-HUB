@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Separator, Textarea, Button } from '@/components/ui';
 import { AppDeleteDialog } from '@/components/common';
 import { QUERY_KEYS } from '@/constants/querykey.constant';
+import { getUserNicknames } from '@/services/useService';
 
 import { useComments, useCommentsCount, useAddComment, useDeleteComment } from '@/hooks/useComment';
 
@@ -44,8 +45,16 @@ export default function CommentBox({ topicId }: CommentBoxProps) {
   const { data: totalCount = 0 } = useCommentsCount(topicId);
   const { data, fetchNextPage, hasNextPage, status } = useComments(topicId);
 
-  // 무한 스크롤 데이터를 단일 배열로 평탄화
   const comments = useMemo(() => data?.pages.flatMap((page) => page.comments) ?? [], [data]);
+
+  const authorIds = useMemo(() => comments.map((c) => c.user_id).filter(Boolean) as string[], [comments]);
+
+  const { data: nicknameMap = {} } = useQuery({
+    queryKey: ['user', 'nicknames', authorIds.sort().join(',')],
+    queryFn: () => getUserNicknames(authorIds),
+    enabled: authorIds.length > 0,
+    staleTime: 1000 * 60 * 30,
+  });
 
   // ---------------------------------------------------------
   // 2. 비즈니스 로직 (등록, 삭제)
@@ -175,7 +184,7 @@ export default function CommentBox({ topicId }: CommentBoxProps) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-bold text-slate-100 truncate">
-                          {c.email?.split('@')[0] || '익명 사용자'}
+                          {nicknameMap[c.user_id] || '알 수 없는 사용자'}
                         </span>
                         {isOwner && (
                           <span className="text-[10px] font-bold text-indigo-400 bg-indigo-400/10 px-1.5 py-0.5 rounded-md border border-indigo-400/20">

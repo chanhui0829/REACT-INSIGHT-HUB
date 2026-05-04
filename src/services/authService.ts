@@ -25,6 +25,9 @@ export const signOutService = async () => {
 export const signInWithGoogleService = async () => {
   return await supabase.auth.signInWithOAuth({
     provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+    },
   });
 };
 
@@ -33,7 +36,7 @@ export const checkNickname = async (nickname: string): Promise<boolean> => {
   const { data, error } = await supabase
     .from('user')
     .select('id')
-    .eq('nickname', nickname)
+    .ilike('nickname', nickname)
     .single();
 
   if (error && error.code !== 'PGRST116') {

@@ -4,7 +4,8 @@ import supabase from "@/lib/supabase";
 import { toast } from "sonner";
 import { Input } from "@/components/ui";
 import { Button } from "@/components/ui";
-import { checkNickname } from "@/services/authService";
+import { Checkbox } from "@/components/ui";
+import { checkNickname, updateUserAgreement } from "@/services/authService";
 
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -14,6 +15,9 @@ export default function AuthCallback() {
   const [loading, setLoading] = useState(true);
   const [nicknameError, setNicknameError] = useState("");
   const [isCheckingNickname, setIsCheckingNickname] = useState(false);
+  const [serviceAgreed, setServiceAgreed] = useState(false);
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
+  const [marketingAgreed, setMarketingAgreed] = useState(false);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -63,6 +67,11 @@ export default function AuthCallback() {
       return;
     }
 
+    if (!serviceAgreed || !privacyAgreed) {
+      toast.error("필수 동의항목을 체크해주세요.");
+      return;
+    }
+
     if (!userId) return;
 
     setIsCheckingNickname(true);
@@ -74,13 +83,25 @@ export default function AuthCallback() {
       return;
     }
 
-    const { error } = await supabase
+    const { error: nicknameError } = await supabase
       .from("user")
       .update({ nickname })
       .eq("id", userId);
 
-    if (error) {
+    if (nicknameError) {
       toast.error("닉네임 저장에 실패했습니다.");
+      return;
+    }
+
+    const { error: agreementError } = await updateUserAgreement(
+      userId,
+      serviceAgreed,
+      privacyAgreed,
+      marketingAgreed
+    );
+
+    if (agreementError) {
+      toast.error("약관 동의 저장에 실패했습니다.");
       return;
     }
 
@@ -115,6 +136,43 @@ export default function AuthCallback() {
           />
           {nicknameError && <p className="text-xs text-red-400 mb-4">{nicknameError}</p>}
           {isCheckingNickname && <p className="text-xs text-zinc-500 mb-4">중복 검사 중...</p>}
+          
+          <div className="space-y-3 mb-6">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="service"
+                checked={serviceAgreed}
+                onCheckedChange={(checked) => setServiceAgreed(checked === true)}
+                className="border-zinc-600 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500"
+              />
+              <label htmlFor="service" className="text-sm text-zinc-300 cursor-pointer">
+                서비스 이용약관 동의 <span className="text-red-400">(필수)</span>
+              </label>
+            </div>
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="privacy"
+                checked={privacyAgreed}
+                onCheckedChange={(checked) => setPrivacyAgreed(checked === true)}
+                className="border-zinc-600 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500"
+              />
+              <label htmlFor="privacy" className="text-sm text-zinc-300 cursor-pointer">
+                개인정보 처리방침 동의 <span className="text-red-400">(필수)</span>
+              </label>
+            </div>
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="marketing"
+                checked={marketingAgreed}
+                onCheckedChange={(checked) => setMarketingAgreed(checked === true)}
+                className="border-zinc-600 data-[state=checked]:bg-indigo-500 data-[state=checked]:border-indigo-500"
+              />
+              <label htmlFor="marketing" className="text-sm text-zinc-300 cursor-pointer">
+                마케팅 정보 수신 동의 <span className="text-zinc-500">(선택)</span>
+              </label>
+            </div>
+          </div>
+
           <Button
             onClick={handleNicknameSubmit}
             disabled={isCheckingNickname}

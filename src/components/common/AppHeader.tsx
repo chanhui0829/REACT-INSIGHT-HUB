@@ -112,10 +112,10 @@ function AppHeader() {
                     className="flex items-center gap-2 h-11 px-4 rounded-full bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 hover:border-indigo-500/30 transition-all"
                   >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs">
-                      {user.email?.[0]?.toUpperCase() || 'U'}
+                      {user.nickname?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
                     </div>
                     <span className="text-xs font-bold text-slate-300">
-                      {user.email?.split('@')[0]}
+                      {user.nickname || user.email?.split('@')[0]}
                     </span>
                     <ChevronDown size={14} className="text-slate-500" />
                   </Button>
@@ -232,11 +232,11 @@ function AppHeader() {
               <div className="space-y-4">
                 <div className="flex items-center gap-3 px-2">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-base shadow-lg shadow-indigo-500/20">
-                    {user.email?.[0]?.toUpperCase() || 'U'}
+                    {user.nickname?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-white truncate max-w-[160px]">
-                      {user.email?.split('@')[0]}
+                      {user.nickname || user.email?.split('@')[0]}
                     </span>
                     <span className="text-xs text-slate-500 truncate max-w-[160px]">
                       {user.email}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useCallback, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores';
 import { AppDeleteDialog, AppEditor } from '@/components/common';
 import { Button, Badge } from '@/components/ui';
 import CommentBox from './comment';
+import { getUserNickname } from '@/services/useService';
 
 import {
   useTopicDetail,
@@ -62,10 +63,16 @@ export default function TopicDetail() {
   const { handleCommentInsert, handleCommentDelete } = useCommentRealtimeHandlers(topicId);
   const { handleLikeInsert, handleLikeDelete } = useTopicRealtimeHandlers(topicId);
 
-  const authorId = useMemo(() => {
-    const targetEmail = user?.email || 'anonymous@insight.hub';
-    return targetEmail.split('@')[0];
-  }, [user?.email]);
+  const [authorNickname, setAuthorNickname] = useState('알 수 없는 사용자');
+
+  useEffect(() => {
+    if (!topic?.author) {
+      setAuthorNickname('알 수 없는 사용자');
+      return;
+    }
+
+    getUserNickname(topic.author).then(setAuthorNickname);
+  }, [topic?.author]);
 
   const isLiked = useMemo(
     () => likesData.some((row) => row.user_id === user?.id),
@@ -154,7 +161,7 @@ export default function TopicDetail() {
           <div className="flex items-center gap-5 mt-8 text-zinc-300 text-[11px] font-bold uppercase tracking-widest">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
               <User size={13} className="text-indigo-400" />
-              <span>{authorId}</span>
+              <span>{authorNickname}</span>
             </div>
             <div className="flex items-center gap-2 opacity-40 font-medium">
               <Calendar size={13} />
