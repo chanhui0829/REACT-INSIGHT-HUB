@@ -7,7 +7,7 @@
 
 import { useCallback, useState, useMemo } from 'react';
 import { NavLink, useNavigate } from 'react-router';
-import { CircleUserRound, Menu, X, LogOut, LayoutGrid, BookText, ChevronDown, User, Settings } from 'lucide-react';
+import { Menu, X, LogOut, LayoutGrid, BookText, ChevronDown, User, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Stores & UI Components
@@ -128,15 +128,11 @@ function AppHeader() {
                     계정
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-white/5" />
-                  <DropdownMenuItem
-                    className="flex items-center gap-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 rounded-xl cursor-pointer"
-                  >
+                  <DropdownMenuItem className="flex items-center gap-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 rounded-xl cursor-pointer">
                     <User size={14} className="text-slate-500" />
                     프로필
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="flex items-center gap-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 rounded-xl cursor-pointer"
-                  >
+                  <DropdownMenuItem className="flex items-center gap-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 rounded-xl cursor-pointer">
                     <Settings size={14} className="text-slate-500" />
                     설정
                   </DropdownMenuItem>
