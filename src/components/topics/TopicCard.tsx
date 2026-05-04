@@ -16,7 +16,7 @@ import 'dayjs/locale/ko';
 
 import { Eye, Heart, Layers } from 'lucide-react';
 
-import { Card, Separator } from '../ui';
+import { Card } from '../ui';
 import type { Topic } from '@/types/topic.type';
 
 dayjs.extend(relativeTime);
@@ -81,64 +81,58 @@ const TopicCardComponent = ({ props, authorNickname }: Props) => {
     <Card
       onClick={handleNavigate}
       className="
-        group relative w-full p-5 
-        bg-[#121214] border-white/5 
-        hover:border-emerald-500/40 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)]
-        transition-all duration-300 cursor-pointer overflow-hidden
-        flex flex-col transform-gpu will-change-transform
+        group relative w-full aspect-[4/5] overflow-hidden cursor-pointer
+        bg-slate-900 border-white/5 rounded-[32px]
+        hover:shadow-[0_20px_40px_rgba(99,102,241,0.15)]
+        transition-all duration-500 transform hover:scale-[1.02]
       "
     >
-      {/* 🔹 상단: 텍스트 정보 & 썸네일 밸런스 */}
-      <div className="flex gap-5 items-start flex-1 min-h-[120px]">
-        <div className="flex-1 flex flex-col gap-2.5 min-w-0">
-          {/* 카테고리 태그 */}
-          <div className="flex items-center gap-1.5">
-            <Layers size={12} className="text-emerald-500" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500/80">
+      {/* Image Section */}
+      <div className="relative h-[65%] w-full overflow-hidden">
+        <img
+          src={props.thumbnail ?? '/assets/default-thumbnail.png'}
+          alt="thumbnail"
+          loading="lazy"
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+        />
+        {/* Category Badge */}
+        <div className="absolute top-4 left-4">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-white/10">
+            <Layers size={11} className="text-indigo-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">
               {props.category}
             </span>
           </div>
-
-          {/* 타이틀 (2줄 제한) */}
-          <h3 className="text-lg font-bold tracking-tight text-zinc-100 line-clamp-2 leading-[1.4] group-hover:text-emerald-400 transition-colors">
-            {props.title}
-          </h3>
-
-          {/* 본문 미리보기 (2줄 제한으로 썸네일과 높이 균형 조정) */}
-          <p className="text-sm text-zinc-400 line-clamp-2 leading-relaxed">{previewText}</p>
-        </div>
-
-        {/* 썸네일: 비율과 크기 고정 */}
-        <div className="relative shrink-0 w-[110px] h-[110px] rounded-xl overflow-hidden border border-white/5 bg-zinc-950">
-          <img
-            src={props.thumbnail ?? '/assets/default-thumbnail.png'}
-            alt="thumbnail"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
         </div>
       </div>
 
-      {/* 🔹 하단: 메타 정보 */}
-      <div className="mt-5 space-y-4">
-        <Separator className="bg-white/5" />
+      {/* Content Section */}
+      <div className="flex-1 p-5 flex flex-col gap-3 bg-slate-950">
+        {/* Title */}
+        <h3 className="text-base font-black tracking-tight text-white line-clamp-2 leading-[1.3] group-hover:text-indigo-400 transition-colors">
+          {props.title}
+        </h3>
 
-        <div className="flex items-center justify-between">
+        {/* Preview Text */}
+        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{previewText}</p>
+
+        {/* Meta Info */}
+        <div className="mt-auto flex items-center justify-between pt-3 border-t border-white/5">
           <div className="flex flex-col">
-            <span className="text-[13px] font-bold text-zinc-200">
+            <span className="text-xs font-bold text-slate-300">
               {authorNickname ?? '알 수 없는 사용자'}
             </span>
-            <span className="text-[11px] text-zinc-500">{dayjs(props.created_at).fromNow()}</span>
+            <span className="text-[10px] text-slate-500">{dayjs(props.created_at).fromNow()}</span>
           </div>
 
-          <div className="flex items-center gap-3 bg-zinc-900/80 px-3 py-1.5 rounded-full border border-white/10">
-            <div className="flex items-center gap-1.5 text-zinc-400">
-              <Eye size={13} />
-              <span className="text-[11px] font-medium">{props.views}</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-slate-400">
+              <Eye size={11} />
+              <span className="text-[10px] font-medium">{props.views}</span>
             </div>
-            <div className="w-px h-2.5 bg-zinc-800" />
-            <div className="flex items-center gap-1.5 text-rose-500">
-              <Heart size={13} className="fill-rose-500/10" />
-              <span className="text-[11px] font-bold">{props.likes}</span>
+            <div className="flex items-center gap-1 text-rose-500">
+              <Heart size={11} className="fill-rose-500/10" />
+              <span className="text-[10px] font-bold">{props.likes}</span>
             </div>
           </div>
         </div>

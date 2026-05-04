@@ -28,8 +28,8 @@ const ITEM_UP: Variants = {
 };
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-  <h2 className="text-xs font-black text-emerald-500 tracking-[0.4em] uppercase mb-12 flex items-center gap-3">
-    <div className="w-8 h-px bg-emerald-500" />
+  <h2 className="text-xs font-black text-indigo-400 tracking-[0.4em] uppercase mb-12 flex items-center gap-3">
+    <div className="w-8 h-px bg-indigo-400" />
     {children}
   </h2>
 );
@@ -48,14 +48,14 @@ export default function CaseStudyPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#050505] text-zinc-400 pb-60 selection:bg-emerald-500/30">
+    <div className="min-h-screen bg-slate-950 text-slate-400 pb-60 selection:bg-indigo-500/30">
       <main className="mx-auto max-w-[1400px] px-8 pt-40">
         {/* 🟢 1. PROJECT HERO & TECH STACK (일자 배치) */}
         <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-52">
           <div className="flex flex-col gap-16">
             <div>
               <h1 className="text-[13vw] md:text-[140px] font-black text-white leading-[0.8] tracking-[-0.05em] italic">
-                INSIGHT <br /> <span className="text-emerald-500">HUB.</span>
+                INSIGHT <br /> <span className="text-indigo-400">HUB.</span>
               </h1>
               <p className="mt-10 text-2xl text-zinc-500 font-bold max-w-2xl">
                 지식의 파편을 연결하는 아카이브 <br />
@@ -68,9 +68,9 @@ export default function CaseStudyPage() {
               {techStack.map((tech) => (
                 <div
                   key={tech.name}
-                  className="flex items-center gap-3 px-5 py-3 rounded-xl bg-zinc-900/50 border border-white/5 group hover:border-emerald-500/40 transition-all duration-300"
+                  className="flex items-center gap-3 px-5 py-3 rounded-xl bg-slate-900/50 border border-white/10 group hover:border-indigo-500/40 transition-all duration-300"
                 >
-                  <div className="text-emerald-500 group-hover:scale-110 transition-transform">
+                  <div className="text-indigo-400 group-hover:scale-110 transition-transform">
                     {tech.icon}
                   </div>
                   <span className="text-white font-black text-xs uppercase tracking-wider">
@@ -92,7 +92,7 @@ export default function CaseStudyPage() {
           {/* 🔴 2. MAIN CHALLENGE & SOLUTION (초록색 호버 효과) */}
           <motion.section variants={ITEM_UP}>
             <SectionTitle>Main Challenge & Solution</SectionTitle>
-            <div className="group relative p-14 rounded-[4rem] bg-zinc-900/20 border border-white/5 overflow-hidden transition-all duration-700 hover:border-emerald-500/50 hover:bg-emerald-500/1">
+            <div className="group relative p-14 rounded-[4rem] bg-slate-900/20 border border-white/5 overflow-hidden transition-all duration-700 hover:border-indigo-500/50 hover:bg-indigo-500/5">
               <div className="grid md:grid-cols-2 gap-20 relative z-10">
                 <div className="space-y-8">
                   <div className="flex items-center gap-3 text-rose-500">
@@ -112,7 +112,7 @@ export default function CaseStudyPage() {
                   </p>
                 </div>
                 <div className="flex flex-col justify-center space-y-5">
-                  <div className="flex items-center gap-3 text-emerald-500 mb-2">
+                  <div className="flex items-center gap-3 text-indigo-400 mb-2">
                     <MousePointer2 size={18} className="animate-bounce" />
                     <span className="font-black text-[10px] uppercase tracking-[0.2em]">
                       Resolution
@@ -125,15 +125,15 @@ export default function CaseStudyPage() {
                   ].map((sol) => (
                     <div
                       key={sol}
-                      className="flex items-center gap-4 p-5 rounded-4xl bg-black/40 border border-white/5 group-hover:border-emerald-500/20 transition-all"
+                      className="flex items-center gap-4 p-5 rounded-4xl bg-black/40 border border-white/5 group-hover:border-indigo-500/20 transition-all"
                     >
-                      <CheckCircle2 size={18} className="text-emerald-500" />
+                      <CheckCircle2 size={18} className="text-indigo-400" />
                       <span className="text-zinc-300 font-bold text-base">{sol}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="absolute inset-0 bg-linear-to-tr from-emerald-500/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
             </div>
           </motion.section>
 
@@ -142,7 +142,7 @@ export default function CaseStudyPage() {
             <SectionTitle>Deep Troubleshooting</SectionTitle>
             <div className="p-16 rounded-[5rem] bg-zinc-900/30 border border-white/5">
               <div className="flex flex-col md:flex-row items-center gap-8 mb-16">
-                <div className="w-20 h-20 bg-violet-600/20 rounded-4xl flex items-center justify-center text-violet-400">
+                <div className="w-20 h-20 bg-purple-600/20 rounded-4xl flex items-center justify-center text-purple-400">
                   <Zap size={36} fill="currentColor" />
                 </div>
                 <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase">
@@ -160,8 +160,8 @@ export default function CaseStudyPage() {
                     즉각적인 경험을 제공하는 데 주력했습니다.
                   </p>
                 </div>
-                <div className="p-10 rounded-[3rem] bg-violet-600/3 border border-violet-500/10">
-                  <p className="text-[10px] font-black text-violet-400 uppercase tracking-[0.3em] mb-6">
+                <div className="p-10 rounded-[3rem] bg-purple-600/5 border border-purple-500/10">
+                  <p className="text-[10px] font-black text-purple-400 uppercase tracking-[0.3em] mb-6">
                     Technical Fix
                   </p>
                   <p className="text-zinc-300 font-bold leading-relaxed italic">
@@ -199,12 +199,12 @@ export default function CaseStudyPage() {
               ].map((tech) => (
                 <div
                   key={tech.title}
-                  className="p-12 rounded-[3.5rem] bg-zinc-900 border border-white/5 hover:border-zinc-700 transition-all group"
+                  className="p-12 rounded-[3.5rem] bg-slate-900 border border-white/5 hover:border-slate-700 transition-all group"
                 >
-                  <div className="text-emerald-500 mb-10 group-hover:scale-110 transition-transform origin-left">
+                  <div className="text-indigo-400 mb-10 group-hover:scale-110 transition-transform origin-left">
                     {tech.icon}
                   </div>
-                  <h4 className="text-white font-black text-xl mb-4 tracking-tight italic underline decoration-emerald-500/30 decoration-2 underline-offset-8">
+                  <h4 className="text-white font-black text-xl mb-4 tracking-tight italic underline decoration-indigo-500/30 decoration-2 underline-offset-8">
                     {tech.title}
                   </h4>
                   <p className="text-zinc-500 font-bold leading-relaxed text-sm">{tech.detail}</p>
@@ -217,7 +217,7 @@ export default function CaseStudyPage() {
           <motion.section variants={ITEM_UP}>
             <SectionTitle>Learning & Growth</SectionTitle>
             <div className="grid md:grid-cols-12 gap-8">
-              <div className="md:col-span-7 p-14 rounded-[4rem] bg-emerald-500 text-black">
+              <div className="md:col-span-7 p-14 rounded-[4rem] bg-indigo-500 text-black">
                 <h3 className="text-4xl font-black mb-8 tracking-tighter italic leading-none">
                   Engineering <br /> Mindset
                 </h3>

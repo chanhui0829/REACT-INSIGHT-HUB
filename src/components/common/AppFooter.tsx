@@ -54,22 +54,23 @@ export function AppFooter() {
   const navSections = useMemo(() => FOOTER_NAV_DATA, []);
 
   return (
-    <footer className="relative bg-zinc-950 border-t border-white/5 pt-12 pb-10  overflow-hidden">
+    <footer className="relative bg-slate-950 border-t border-white/5 pt-16 pb-10 overflow-hidden">
       {/* Background Decorative Element */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 blur-[150px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
-      <div className="max-w-[1400px] mx-auto px-8">
+      <div className="max-w-[1400px] mx-auto px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-8 mb-12">
           {/* 1️⃣ Brand Section: 큼직한 로고와 슬로건 */}
           <section className="lg:col-span-5 space-y-8">
             <div className="flex items-center gap-3">
-              <span className="text-2xl font-black text-white tracking-tighter uppercase italic">
-                Insight Hub
+              <span className="text-2xl font-extrabold tracking-tight text-white">
+                Insight<span className="text-indigo-400">Hub</span>
               </span>
             </div>
-            <p className="max-w-sm text-lg font-medium text-zinc-500 leading-snug">
-              흩어진 지식의 조각을 모아 <br />
-              <span className="text-zinc-200">단단한 통찰로 연결하는</span> 기술 공유 아카이브.
+            <p className="max-w-sm text-base font-medium text-slate-400 leading-relaxed">
+              Connect the Dots,
+              <br />
+              <span className="text-slate-200">Create your Insight.</span>
             </p>
 
             {/* Social & Contact */}
@@ -78,24 +79,24 @@ export function AppFooter() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="w-12 h-12 rounded-2xl bg-zinc-900 border-white/5 hover:border-emerald-500/50 hover:bg-zinc-800 transition-all"
+                  className="w-12 h-12 rounded-full bg-slate-900 border-white/10 hover:border-indigo-500/50 hover:bg-slate-800 transition-all"
                 >
-                  <Github size={20} className="text-zinc-400 group-hover:text-emerald-400" />
+                  <Github size={20} className="text-slate-400 group-hover:text-indigo-400" />
                 </Button>
               </NavLink>
               <Button
                 variant="outline"
                 size="icon"
-                className="w-12 h-12 rounded-2xl bg-zinc-900 border-white/5 hover:border-emerald-500/50 transition-all"
+                className="w-12 h-12 rounded-full bg-slate-900 border-white/10 hover:border-indigo-500/50 hover:bg-slate-800 transition-all"
               >
-                <Youtube size={20} className="text-zinc-400" />
+                <Youtube size={20} className="text-slate-400" />
               </Button>
               <Button
                 variant="outline"
                 size="icon"
-                className="w-12 h-12 rounded-2xl bg-zinc-900 border-white/5 hover:border-emerald-500/50 transition-all"
+                className="w-12 h-12 rounded-full bg-slate-900 border-white/10 hover:border-indigo-500/50 hover:bg-slate-800 transition-all"
               >
-                <Mail size={20} className="text-zinc-400" />
+                <Mail size={20} className="text-slate-400" />
               </Button>
             </div>
           </section>
@@ -104,7 +105,7 @@ export function AppFooter() {
           <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-12">
             {navSections.map((section) => (
               <nav key={section.title} className="space-y-6">
-                <h4 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-500/80">
+                <h4 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-400/80">
                   {section.title}
                 </h4>
                 <ul className="space-y-4">
@@ -112,12 +113,12 @@ export function AppFooter() {
                     <li key={link.label}>
                       <NavLink
                         to={link.to}
-                        className="group flex items-center gap-2 text-[15px] font-bold text-zinc-500 hover:text-white transition-colors"
+                        className="group flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-white transition-colors"
                       >
                         {link.label}
                         <ExternalLink
                           size={12}
-                          className="opacity-0 group-hover:opacity-100 -translate-y-1 transition-all"
+                          className="opacity-0 group-hover:opacity-100 -translate-y-1 transition-all text-indigo-400"
                         />
                       </NavLink>
                     </li>
@@ -129,13 +130,13 @@ export function AppFooter() {
         </div>
 
         {/* 3️⃣ Bottom Copyright: 마무리는 깔끔하게 */}
-        <div className="flex flex-col md:flex-row justify-between items-center pt-12 border-t border-white/5 gap-6 text-xs font-black uppercase tracking-widest text-zinc-600">
+        <div className="flex flex-col md:flex-row justify-between items-center pt-12 border-t border-white/5 gap-6 text-xs font-black uppercase tracking-widest text-slate-500">
           <p>© 2026 Insight Hub. Build by chanhui.</p>
           <div className="flex gap-8">
-            <span className="hover:text-zinc-400 cursor-pointer transition-colors">
+            <span className="hover:text-slate-300 cursor-pointer transition-colors">
               Front-end Arch
             </span>
-            <span className="hover:text-zinc-400 cursor-pointer transition-colors">
+            <span className="hover:text-slate-300 cursor-pointer transition-colors">
               UX Optimized
             </span>
           </div>

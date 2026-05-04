@@ -61,19 +61,19 @@ const DraftItem = memo(({ draft, index, onNavigate, onDelete }: DraftItemProps) 
   return (
     <div
       onClick={() => onNavigate(draft.id)}
-      className="group flex items-center justify-between py-3.5 px-2 border-b border-white/3 hover:bg-white/2 transition-colors cursor-pointer"
+      className="group flex items-center justify-between py-3 px-3 border-b border-white/5 hover:bg-slate-900/50 transition-all cursor-pointer rounded-lg"
       style={{ transform: 'translateZ(0)' }} // GPU 가속 유도
     >
-      <div className="flex items-center gap-4 overflow-hidden">
-        <span className="text-[10px] font-black text-zinc-700 group-hover:text-emerald-500 transition-colors">
+      <div className="flex items-center gap-3 overflow-hidden">
+        <span className="text-[10px] font-black text-slate-600 group-hover:text-indigo-400 transition-colors">
           {(index + 1).toString().padStart(2, '0')}
         </span>
         <div className="flex flex-col gap-0.5 overflow-hidden">
-          <h3 className="text-[13.5px] font-semibold text-zinc-300 group-hover:text-white truncate pr-4">
+          <h3 className="text-[13.5px] font-semibold text-slate-300 group-hover:text-white truncate pr-4">
             {draft.title || '제목이 없는 토픽'}
           </h3>
-          <div className="flex items-center gap-1 text-[10px] text-zinc-600">
-            <Clock className="w-3 h-3 text-zinc-700" />
+          <div className="flex items-center gap-1 text-[10px] text-slate-500">
+            <Clock className="w-3 h-3 text-slate-600" />
             <span>{dayjs(draft.created_at).fromNow()}</span>
           </div>
         </div>
@@ -92,7 +92,7 @@ const DraftItem = memo(({ draft, index, onNavigate, onDelete }: DraftItemProps) 
         </div>
         <Badge
           variant="outline"
-          className="text-[10px] px-2 h-5 border-zinc-800 text-zinc-500 bg-zinc-900/50 group-hover:border-emerald-500/40 group-hover:text-emerald-400 transition-all"
+          className="text-[10px] px-2 h-5 border-white/10 text-slate-500 bg-slate-900/50 group-hover:border-indigo-500/40 group-hover:text-indigo-400 transition-all"
         >
           작성중
         </Badge>
@@ -142,8 +142,8 @@ export function AppDraftsDialog({ children }: { children: React.ReactNode }) {
   const renderedDrafts = useMemo(() => {
     if (isLoading) {
       return (
-        <div className="flex flex-col items-center justify-center py-12 text-zinc-500">
-          <Loader2 className="w-5 h-5 animate-spin mb-2 text-emerald-500" />
+        <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+          <Loader2 className="w-5 h-5 animate-spin mb-2 text-indigo-400" />
           <p className="text-xs font-medium">보관함을 확인하고 있어요</p>
         </div>
       );
@@ -152,8 +152,8 @@ export function AppDraftsDialog({ children }: { children: React.ReactNode }) {
     if (drafts.length === 0) {
       return (
         <div className="py-12 flex flex-col items-center justify-center text-center">
-          <Inbox className="w-8 h-8 text-zinc-800 mb-2" />
-          <p className="text-zinc-600 text-[13px] leading-relaxed">
+          <Inbox className="w-8 h-8 text-slate-700 mb-2" />
+          <p className="text-slate-500 text-[13px] leading-relaxed">
             임시 저장된 토픽이 없습니다.
             <br />
             새로운 통찰을 기록해보세요.
@@ -189,23 +189,23 @@ export function AppDraftsDialog({ children }: { children: React.ReactNode }) {
         </div>
       </DialogTrigger>
 
-      <DialogContent className="max-w-[420px] bg-[#0c0c0e] border-white/5 p-7 rounded-[28px] shadow-2xl focus:outline-none">
-        <DialogHeader className="space-y-1.5 text-left">
-          <div className="flex items-center gap-2">
-            <div className="w-1 h-5 bg-emerald-500 rounded-full" />
-            <DialogTitle className="text-xl font-bold text-white tracking-tight italic">
+      <DialogContent className="max-w-[420px] bg-slate-950 border-white/10 p-7 rounded-[32px] shadow-2xl focus:outline-none">
+        <DialogHeader className="space-y-2 text-left">
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full" />
+            <DialogTitle className="text-xl font-bold text-white tracking-tight">
               임시 저장 보관함
             </DialogTitle>
           </div>
-          <DialogDescription className="text-[13px] text-zinc-500 leading-relaxed">
+          <DialogDescription className="text-[13px] text-slate-500 leading-relaxed">
             작성하던 생각을 이어서 완성해보세요. 삭제한 데이터는 복구되지 않습니다.
           </DialogDescription>
         </DialogHeader>
 
         <div className="mt-6 overflow-hidden">
-          <div className="flex items-end justify-between mb-2.5 px-1 font-bold">
-            <span className="text-[11px] text-zinc-600 tracking-wider">보관된 목록</span>
-            <div className="flex items-center gap-1 text-emerald-500">
+          <div className="flex items-end justify-between mb-3 px-1 font-bold">
+            <span className="text-[11px] text-slate-600 tracking-wider">보관된 목록</span>
+            <div className="flex items-center gap-1 text-indigo-400">
               <span className="text-[14px] leading-none">{drafts.length}</span>
               <span className="text-[11px] font-medium">개의 토픽</span>
             </div>
@@ -213,7 +213,7 @@ export function AppDraftsDialog({ children }: { children: React.ReactNode }) {
           <Separator className="bg-white/5" />
 
           <div
-            className="w-full mt-2 max-h-[260px] overflow-y-auto scrollbar-hide"
+            className="w-full mt-3 max-h-[280px] overflow-y-auto scrollbar-hide space-y-1"
             style={{
               contain: 'content', // 레이아웃 격리를 통한 스크롤 최적화
               WebkitOverflowScrolling: 'touch',
@@ -223,11 +223,11 @@ export function AppDraftsDialog({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <DialogFooter className="mt-5">
+        <DialogFooter className="mt-6">
           <DialogClose asChild>
             <Button
               variant="ghost"
-              className="w-full h-11 text-[13px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/50 rounded-xl transition-all"
+              className="w-full h-11 text-[13px] text-slate-500 hover:text-slate-300 hover:bg-slate-900/50 rounded-full transition-all"
             >
               나중에 할게요
             </Button>

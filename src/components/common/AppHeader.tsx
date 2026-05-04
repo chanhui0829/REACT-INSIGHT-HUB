@@ -6,15 +6,24 @@
  */
 
 import { useCallback, useState, useMemo } from 'react';
-import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router';
-import { CircleUserRound, Menu, X, LogOut, ChevronRight, LayoutGrid, BookText } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router';
+import { CircleUserRound, Menu, X, LogOut, LayoutGrid, BookText, ChevronDown, User, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Stores & UI Components
 import { useStoreWithEqualityFn } from 'zustand/traditional';
 import { shallow } from 'zustand/shallow';
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui';
+
 import { useAuthStore } from '@/stores';
-import { AppSidebar } from '@/components/common';
 
 const useAuthSelector = () =>
   useStoreWithEqualityFn(
@@ -28,13 +37,8 @@ const useAuthSelector = () =>
 
 function AppHeader() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const { user, reset } = useAuthSelector();
-
-  // 현재 URL에서 카테고리 값 추출 (기본값: all)
-  const currentCategory = searchParams.get('category') || 'all';
 
   // —————————————————————————————————————————————————————————————————————————————
   // Handlers
@@ -54,26 +58,6 @@ function AppHeader() {
     }
   }, [reset, navigate]);
 
-  /**
-   * 2. 카테고리 선택 핸들러 (재사용 가능 로직)
-   * 클릭 시 URL 파라미터를 변경하고 모바일 메뉴를 닫습니다.
-   */
-  const handleCategoryChange = useCallback(
-    (categoryValue: string) => {
-      // URL 파라미터 업데이트 (모든 페이지에서 '토픽 탐색'으로 이동하며 필터 적용)
-      setSearchParams({ category: categoryValue });
-
-      // 만약 메인 페이지가 아닌 곳에 있다면 메인으로 이동하며 파라미터 전달
-      if (location.pathname !== '/') {
-        navigate(`/?category=${categoryValue}`);
-      }
-
-      // 모바일 메뉴 닫기
-      setIsOpen(false);
-    },
-    [setSearchParams, navigate, location.pathname]
-  );
-
   const toggleMenu = () => setIsOpen((prev) => !prev);
   const closeMenu = () => setIsOpen(false);
 
@@ -88,70 +72,95 @@ function AppHeader() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 z-100 w-full border-b border-white/5 bg-zinc-950/80 backdrop-blur-xl shadow-lg">
-        <div className="mx-auto flex h-16 max-w-[1240px] items-center justify-between px-6">
-          {/* ——— 로고 & PC 메뉴 ——— */}
-          <div className="flex items-center gap-18">
-            <NavLink
-              to="/"
-              onClick={closeMenu}
-              className="flex items-center transition-opacity hover:opacity-80 pt-2 "
-            >
-              <img src="/assets/icons/insight-hub.svg" alt="Insight Hub" className="h-10 w-auto" />
-            </NavLink>
+      <header className="fixed top-6 left-1/2 -translate-x-1/2 z-100 w-full max-w-[1400px] px-6">
+        <div className="mx-auto flex h-14 items-center justify-between rounded-full bg-slate-950/70 backdrop-blur-xl border border-white/10 shadow-2xl px-6">
+          {/* ——— 로고 ——— */}
+          <NavLink
+            to="/"
+            onClick={closeMenu}
+            className="flex items-center transition-opacity hover:opacity-80 font-sans"
+          >
+            <span className="text-xl font-extrabold tracking-tight text-white">
+              Insight<span className="text-indigo-400">Hub</span>
+            </span>
+          </NavLink>
 
-            <nav className="hidden md:flex items-center gap-8">
-              {navLinks.map((link) => (
-                <div key={link.to} className="relative group">
-                  <NavLink
-                    to={link.to}
-                    className={({ isActive }) => `
-          flex items-center gap-2.5 text-[14px] font-black transition-all duration-200 tracking-tight
-          ${isActive ? 'text-emerald-400' : 'text-zinc-500 hover:text-white'}
+          {/* ——— PC 메뉴 ——— */}
+          <nav className="hidden md:flex items-center gap-6">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={({ isActive }) => `
+          flex items-center gap-2 text-[13px] font-black transition-all duration-200 tracking-tight
+          ${isActive ? 'text-indigo-400' : 'text-slate-400 hover:text-white'}
         `}
-                  >
-                    {link.icon}
-                    {link.label}
-                  </NavLink>
+              >
+                {link.icon}
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
 
-                  {/* "이 프로젝트가 궁금하다면?" 툴팁 효과 (Case-Study에만 적용) */}
-                  {link.label === 'Case-Study' && (
-                    <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-emerald-500 px-3 py-1.5 text-[11px] font-bold text-zinc-950 opacity-0 transition-all duration-300 group-hover:bottom-[-45px] group-hover:opacity-100 pointer-events-none">
-                      이 프로젝트가 궁금하다면? ✨{/* 말풍선 꼬리 */}
-                      <span className="absolute -top-1 left-1/2 -translate-x-1/2 h-2 w-2 rotate-45 bg-emerald-500" />
-                    </span>
-                  )}
-                </div>
-              ))}
-            </nav>
-          </div>
-          {/* ——— PC 사용자 메뉴 (로그아웃 아이콘 추가) ——— */}
-          <div className="hidden md:flex items-center gap-6">
+          {/* ——— PC 사용자 메뉴 ——— */}
+          <div className="hidden md:flex items-center gap-4">
             {user ? (
-              <div className="flex items-center gap-5">
-                <div className="flex items-center gap-2 text-sm font-semibold text-zinc-300 px-3 py-1.5 rounded-full bg-white/3 border border-white/5">
-                  <CircleUserRound size={16} className="text-emerald-500" />
-                  <span>{user.email?.split('@')[0]}님</span>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="group flex items-center gap-1.5 text-sm font-bold text-zinc-500 hover:text-rose-400 transition-colors"
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex items-center gap-2 h-11 px-4 rounded-full bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 hover:border-indigo-500/30 transition-all"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs">
+                      {user.email?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                    <span className="text-xs font-bold text-slate-300">
+                      {user.email?.split('@')[0]}
+                    </span>
+                    <ChevronDown size={14} className="text-slate-500" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-48 bg-slate-950 border border-white/10 rounded-2xl p-2 shadow-2xl"
                 >
-                  <LogOut size={16} className="transition-transform group-hover:translate-x-1" />
-                  로그아웃
-                </button>
-              </div>
+                  <DropdownMenuLabel className="text-xs font-bold text-slate-500 px-3 py-2">
+                    계정
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-white/5" />
+                  <DropdownMenuItem
+                    className="flex items-center gap-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 rounded-xl cursor-pointer"
+                  >
+                    <User size={14} className="text-slate-500" />
+                    프로필
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex items-center gap-2 text-sm text-slate-300 hover:text-white hover:bg-white/5 rounded-xl cursor-pointer"
+                  >
+                    <Settings size={14} className="text-slate-500" />
+                    설정
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-white/5" />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 text-sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl cursor-pointer"
+                  >
+                    <LogOut size={14} />
+                    로그아웃
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <NavLink
                   to="/sign-in"
-                  className="text-sm font-bold text-zinc-400 hover:text-white px-3 py-2 transition-all"
+                  className="text-xs font-bold text-slate-400 hover:text-white px-4 py-2 transition-all"
                 >
                   로그인
                 </NavLink>
                 <NavLink
                   to="/sign-up"
-                  className="rounded-full bg-emerald-500 px-5 py-2 text-sm font-black text-zinc-950 shadow-[0_8px_20px_rgba(16,185,129,0.2)] transition-transform active:scale-95"
+                  className="rounded-full bg-indigo-500 px-4 py-2 text-xs font-black text-white transition-transform active:scale-95"
                 >
                   회원가입
                 </NavLink>
@@ -165,9 +174,9 @@ function AppHeader() {
             aria-label={isOpen ? '모바일 메뉴 닫기' : '모바일 메뉴 열기'}
             aria-controls="mobile-nav-drawer"
             aria-expanded={isOpen}
-            className="flex md:hidden p-2 text-zinc-400 hover:text-white transition-colors min-w-11 min-h-11 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 rounded-xl"
+            className="flex md:hidden p-2 text-slate-400 hover:text-white transition-colors min-w-10 min-h-10 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 rounded-full"
           >
-            {isOpen ? <X size={26} /> : <Menu size={26} />}
+            {isOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </header>
@@ -179,7 +188,7 @@ function AppHeader() {
         }`}
       >
         <div
-          className={`absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${
+          className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${
             isOpen ? 'opacity-100' : 'opacity-0'
           }`}
           onClick={closeMenu}
@@ -188,7 +197,7 @@ function AppHeader() {
         <div
           id="mobile-nav-drawer"
           className={`
-          absolute right-0 top-0 h-full w-[75%] max-w-[320px] bg-zinc-950 border-l border-white/5 p-6 shadow-2xl transition-transform duration-500 ease-out flex flex-col
+          absolute right-0 top-0 h-full w-[80%] max-w-[340px] bg-slate-950 border-l border-white/10 p-6 shadow-2xl transition-transform duration-500 ease-out flex flex-col
           ${isOpen ? 'translate-x-0' : 'translate-x-full'}
         `}
         >
@@ -196,25 +205,15 @@ function AppHeader() {
             <button
               onClick={closeMenu}
               aria-label="모바일 메뉴 닫기"
-              className="p-2 text-zinc-500 hover:text-white min-w-11 min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 rounded-xl"
+              className="p-2 text-slate-500 hover:text-white min-w-11 min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 rounded-full"
             >
               <X size={24} />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
-            {/* 1. 카테고리 (AppSidebar 재사용 및 로직 주입) */}
-            <div className="mb-8 px-1">
-              <h3 className="text-[11px] font-black uppercase tracking-widest text-zinc-600 mb-5">
-                Category
-              </h3>
-              <div className="rounded-4xl bg-white/2 p-2 border border-white/5">
-                <AppSidebar category={currentCategory} setCategory={handleCategoryChange} />
-              </div>
-            </div>
-
-            {/* 2. 퀵 링크 */}
-            <div className="flex flex-col gap-3">
+          <div className="flex-1 overflow-y-auto scrollbar-hide">
+            {/* 1. 퀵 링크 */}
+            <div className="flex flex-col gap-2 mb-8">
               {navLinks.map((link) => (
                 <button
                   key={link.to}
@@ -222,51 +221,68 @@ function AppHeader() {
                     navigate(link.to);
                     closeMenu();
                   }}
-                  className="flex items-center justify-between w-full p-5 rounded-2xl bg-white/3 border border-white/5 text-zinc-300 font-bold active:bg-emerald-500/10 active:text-emerald-400 transition-all text-[15px]"
+                  className="flex items-center gap-3 w-full p-4 rounded-2xl bg-white/5 border border-white/10 text-slate-300 font-bold hover:bg-white/10 hover:text-white transition-all text-sm"
                 >
-                  <div className="flex items-center gap-3">
-                    {link.icon}
-                    {link.label}
-                  </div>
-                  <ChevronRight size={14} className="opacity-30" />
+                  {link.icon}
+                  {link.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* 3. 하단 사용자 계정 정보 */}
-          <div className="mt-auto pt-6 border-t border-white/5">
+          {/* 2. 하단 사용자 계정 정보 */}
+          <div className="mt-auto pt-6 border-t border-white/10">
             {user ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-3 px-2">
-                  <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                    <CircleUserRound size={22} className="text-emerald-500" />
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-base shadow-lg shadow-indigo-500/20">
+                    {user.email?.[0]?.toUpperCase() || 'U'}
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[14px] font-bold text-white truncate max-w-[140px]">
-                      {user.email?.split('@')[0]}님
+                    <span className="text-sm font-bold text-white truncate max-w-[160px]">
+                      {user.email?.split('@')[0]}
                     </span>
-                    <span className="text-[11px] text-zinc-500 truncate max-w-[140px]">
+                    <span className="text-xs text-slate-500 truncate max-w-[160px]">
                       {user.email}
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-zinc-900 border border-white/5 text-rose-400 font-bold text-sm active:scale-95 transition-all"
-                >
-                  <LogOut size={16} />
-                  로그아웃
-                </button>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => {
+                      closeMenu();
+                    }}
+                    className="flex items-center gap-3 w-full p-3.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-bold hover:bg-white/10 hover:text-white transition-all text-sm"
+                  >
+                    <User size={16} className="text-slate-500" />
+                    프로필
+                  </button>
+                  <button
+                    onClick={() => {
+                      closeMenu();
+                    }}
+                    className="flex items-center gap-3 w-full p-3.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-bold hover:bg-white/10 hover:text-white transition-all text-sm"
+                  >
+                    <Settings size={16} className="text-slate-500" />
+                    설정
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center justify-center gap-2 w-full p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold hover:bg-rose-500/20 hover:text-rose-300 transition-all text-sm"
+                  >
+                    <LogOut size={16} />
+                    로그아웃
+                  </button>
+                </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2">
                 <button
                   onClick={() => {
                     navigate('/sign-in');
                     closeMenu();
                   }}
-                  className="w-full py-4 text-zinc-400 font-bold text-sm"
+                  className="w-full py-3.5 text-slate-400 font-bold text-sm hover:text-white transition-colors"
                 >
                   로그인
                 </button>
@@ -275,7 +291,7 @@ function AppHeader() {
                     navigate('/sign-up');
                     closeMenu();
                   }}
-                  className="w-full py-4 bg-emerald-500 text-zinc-950 rounded-2xl font-black text-sm active:scale-95 transition-all"
+                  className="w-full py-3.5 bg-indigo-500 text-white rounded-full font-black text-sm active:scale-95 transition-all"
                 >
                   회원가입
                 </button>

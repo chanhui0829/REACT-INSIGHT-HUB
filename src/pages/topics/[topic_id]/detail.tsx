@@ -4,7 +4,7 @@ import { useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
-import { ArrowLeft, Eye, Heart, Calendar, Share2, User } from 'lucide-react';
+import { ArrowLeft, Eye, Heart, Calendar, Share2, User, Bookmark, Link2, Printer, TrendingUp } from 'lucide-react';
 
 import { useAuthStore } from '@/stores';
 import { AppDeleteDialog, AppEditor } from '@/components/common';
@@ -23,11 +23,17 @@ import { useCommentRealtimeHandlers } from '@/hooks/useComment';
 import { subscribeTopicRealtime } from '@/services/realtimeService';
 import type { Block } from '@blocknote/core';
 
-const RELATED_TOPICS = [
-  { id: 1, title: 'Next.js 14의 서버 컴포넌트 이해하기', date: '2026.04.10' },
-  { id: 2, title: '효율적인 상태 관리를 위한 Zustand 활용법', date: '2026.04.12' },
-  { id: 3, title: '2026년 프론트엔드 디자인 트렌드 분석', date: '2026.04.15' },
-  { id: 4, title: 'TypeScript 5.0 신규 기능 살펴보기', date: '2026.04.18' },
+const TRENDING_TOPICS = [
+  { id: 1, title: 'Next.js 14의 서버 컴포넌트 이해하기', category: 'React', likes: 42 },
+  { id: 2, title: '효율적인 상태 관리를 위한 Zustand 활용법', category: 'State', likes: 38 },
+  { id: 3, title: '2026년 프론트엔드 디자인 트렌드 분석', category: 'Design', likes: 35 },
+  { id: 4, title: 'TypeScript 5.0 신규 기능 살펴보기', category: 'TypeScript', likes: 29 },
+];
+
+const QUICK_ACTIONS = [
+  { icon: Link2, label: '링크 복사', action: 'copy' },
+  { icon: Bookmark, label: '북마크', action: 'bookmark' },
+  { icon: Printer, label: '인쇄', action: 'print' },
 ];
 
 const parseEditorContent = (raw: string | Block[] | null | undefined): Block[] => {
@@ -139,7 +145,7 @@ export default function TopicDetail() {
         </nav>
 
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 mt-6 pointer-events-none">
-          <Badge className="mb-4 bg-emerald-500 text-white border-none px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
+          <Badge className="mb-4 bg-indigo-500 text-white border-none px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
             {topic?.category}
           </Badge>
           <h1 className="text-3xl md:text-5xl font-black tracking-tighter leading-[1.2] max-w-4xl break-keep drop-shadow-2xl">
@@ -147,7 +153,7 @@ export default function TopicDetail() {
           </h1>
           <div className="flex items-center gap-5 mt-8 text-zinc-300 text-[11px] font-bold uppercase tracking-widest">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-              <User size={13} className="text-emerald-400" />
+              <User size={13} className="text-indigo-400" />
               <span>{authorId}</span>
             </div>
             <div className="flex items-center gap-2 opacity-40 font-medium">
@@ -200,23 +206,64 @@ export default function TopicDetail() {
 
           {/* Sticky Sidebar: 오직 댓글 영역 우측에만 존재 */}
           <aside className="hidden lg:block lg:col-span-4 mt-20">
-            <div className="sticky top-[calc(66px+40px)] space-y-12 pl-8 border-l border-white/5">
+            <div className="sticky top-[calc(66px+40px)] space-y-8 pl-8 border-l border-white/5">
+              {/* Quick Actions Section */}
               <section>
-                <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-500 mb-8 px-2">
-                  Related Topics
+                <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-6 px-2">
+                  Quick Actions
                 </h4>
-                <div className="space-y-3">
-                  {RELATED_TOPICS.map((item) => (
-                    <div
-                      key={item.id}
-                      className="group p-5 rounded-3xl hover:bg-white/5 transition-all cursor-pointer border border-transparent hover:border-white/5"
+                <div className="grid grid-cols-3 gap-2">
+                  {QUICK_ACTIONS.map((action) => (
+                    <button
+                      key={action.action}
+                      onClick={() => {
+                        if (action.action === 'copy') {
+                          navigator.clipboard.writeText(window.location.href);
+                          toast.success('링크가 복사되었습니다.');
+                        } else if (action.action === 'bookmark') {
+                          toast.info('북마크 기능이 곧 추가될 예정입니다.');
+                        } else if (action.action === 'print') {
+                          window.print();
+                        }
+                      }}
+                      className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-slate-900/40 border border-white/10 hover:border-indigo-500/30 hover:bg-slate-900/60 transition-all group"
                     >
-                      <h5 className="font-bold text-[14px] leading-snug group-hover:text-emerald-400 transition-colors line-clamp-2 break-keep">
-                        {item.title}
-                      </h5>
-                      <div className="flex items-center gap-2 mt-4 text-[10px] text-zinc-600 font-bold tracking-widest uppercase">
-                        <Calendar size={12} />
-                        <span>{item.date}</span>
+                      <action.icon size={18} className="text-slate-400 group-hover:text-indigo-400 transition-colors" />
+                      <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-300 transition-colors">
+                        {action.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              {/* Trending Topics Section */}
+              <section>
+                <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-purple-400 mb-6 px-2 flex items-center gap-2">
+                  <TrendingUp size={12} />
+                  Trending Topics
+                </h4>
+                <div className="space-y-2">
+                  {TRENDING_TOPICS.map((topic) => (
+                    <div
+                      key={topic.id}
+                      className="group p-4 rounded-2xl bg-slate-900/30 border border-white/5 hover:border-indigo-500/20 hover:bg-slate-900/50 transition-all cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h5 className="font-bold text-sm leading-snug text-slate-200 group-hover:text-indigo-400 transition-colors line-clamp-2 break-keep mb-2">
+                            {topic.title}
+                          </h5>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
+                              {topic.category}
+                            </span>
+                            <div className="flex items-center gap-1 text-[10px] text-slate-500 font-bold">
+                              <Heart size={10} className="fill-rose-500 text-rose-500" />
+                              {topic.likes}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
