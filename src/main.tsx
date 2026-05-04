@@ -7,8 +7,7 @@ import './index.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
-// 🔥 Theme + Toast
-import { ThemeProvider } from '@/components/theme-provider';
+// Toast
 import { Toaster } from '@/components/ui/sonner';
 
 // 🔥 Layout + Pages
@@ -35,31 +34,29 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <ScrollToTop />
-          <Suspense fallback={<div className="min-h-screen bg-[#0a0a0a]" />}>
-            <Routes>
-              <Route element={<RootLayout />}>
-                <Route index element={<App />} />
-                <Route path="sign-up" element={<SignUp />} />
-                <Route path="sign-in" element={<SignIn />} />
-                <Route path="auth/callback" element={<AuthCallback />} />
-                <Route path="topics">
-                  <Route path="create" element={<CreateTopic />} />
-                  <Route path="create/:id" element={<CreateTopic />} />
-                  <Route path=":id/detail" element={<TopicDetail />} />
-                </Route>
-                <Route path="case-study" element={<CaseStudy />} />
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <ScrollToTop />
+        <Suspense fallback={<div className="min-h-screen bg-[#0a0a0a]" />}>
+          <Routes>
+            <Route element={<RootLayout />}>
+              <Route index element={<App />} />
+              <Route path="sign-up" element={<SignUp />} />
+              <Route path="sign-in" element={<SignIn />} />
+              <Route path="auth/callback" element={<AuthCallback />} />
+              <Route path="topics">
+                <Route path="create" element={<CreateTopic />} />
+                <Route path="create/:id" element={<CreateTopic />} />
+                <Route path=":id/detail" element={<TopicDetail />} />
               </Route>
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
+              <Route path="case-study" element={<CaseStudy />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
 
-        <Toaster richColors position="top-center" />
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
-    </ThemeProvider>
+      <Toaster richColors position="top-center" />
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   </React.StrictMode>
 );
