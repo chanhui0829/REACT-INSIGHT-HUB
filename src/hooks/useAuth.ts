@@ -3,9 +3,7 @@ import { useAuthStore } from '@/stores';
 import supabase from '@/lib/supabase';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
-// ------------------------------
-// 🔹 Zustand User 타입과 동일하게 변환하는 함수
-// ------------------------------
+// Zustand User 타입 변환 함수
 function mapUser(sessionUser: SupabaseUser | null) {
   if (!sessionUser) return null;
 
@@ -16,20 +14,16 @@ function mapUser(sessionUser: SupabaseUser | null) {
   };
 }
 
-// ------------------------------
-// 🔹 Auth Listener Hook
-// ------------------------------
+// Auth Listener Hook
 export default function useAuthListener() {
-  // Zustand의 setUser만 가져오면 리렌더 최소화됨
+  // Zustand의 setUser만 가져오면 리렌더 최소화
   const setUser = useAuthStore((state) => state.setUser);
 
-  // -----------------------------------------
-  // 🔥 Supabase User → Zustand User로 변환하여 저장
-  // -----------------------------------------
+  // Supabase User → Zustand User 변환
   const applyUser = useCallback(
     (sessionUser: SupabaseUser | null) => {
       const formatted = mapUser(sessionUser);
-      setUser(formatted); // formatted가 null이면 null 저장
+      setUser(formatted);
     },
     [setUser]
   );
@@ -37,9 +31,7 @@ export default function useAuthListener() {
   useEffect(() => {
     let mounted = true;
 
-    // -----------------------------------------
-    // 🔥 1) 첫 로딩 시 세션 확인
-    // -----------------------------------------
+    // 첫 로딩 시 세션 확인
     const initSession = async () => {
       const { data } = await supabase.auth.getSession();
       const sessionUser = data.session?.user ?? null;
@@ -51,9 +43,7 @@ export default function useAuthListener() {
 
     initSession();
 
-    // -----------------------------------------
-    // 🔥 2) onAuthStateChange로 실시간 로그인 변화 감지
-    // -----------------------------------------
+    // onAuthStateChange로 실시간 로그인 변화 감지
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session: Session | null) => {
         if (!mounted) return;
@@ -61,7 +51,7 @@ export default function useAuthListener() {
       }
     );
 
-    // 🔥 cleanup
+    // cleanup
     return () => {
       mounted = false;
       listener.subscription.unsubscribe();

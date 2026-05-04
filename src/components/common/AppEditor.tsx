@@ -7,18 +7,14 @@ import { ko } from '@blocknote/core/locales';
 import '@blocknote/mantine/style.css';
 import '@blocknote/core/fonts/inter.css';
 
-// ------------------------------
-// 🔹 Props 타입 정의
-// ------------------------------
+// Props 타입
 interface Props {
-  value: Block[]; // 기존 props → value 로 변경
-  onChange?: (content: Block[]) => void; // 기존 setContent → onChange 로 변경
+  value: Block[];
+  onChange?: (content: Block[]) => void;
   readonly?: boolean;
 }
 
-// ------------------------------
-// 🔹 AppEditor 컴포넌트
-// ------------------------------
+// AppEditor 컴포넌트
 export function AppEditor({ value, onChange, readonly = false }: Props) {
   const locale = useMemo(() => ko, []);
 
@@ -32,7 +28,7 @@ export function AppEditor({ value, onChange, readonly = false }: Props) {
     },
   });
 
-  // 🔥 외부 value 변경되면 에디터와 동기화
+  // 외부 value 변경 시 에디터 동기화
   useEffect(() => {
     if (!value || value.length === 0) return;
 

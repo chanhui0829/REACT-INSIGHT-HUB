@@ -23,9 +23,7 @@ interface DeleteConfirmDialogProps {
   cancelText?: string;
 }
 
-// ------------------------------
-// 🔹 AppDeleteDialog (최적화 버전)
-// ------------------------------
+// 삭제 확인 다이얼로그
 export function AppDeleteDialog({
   trigger,
   onConfirm,
@@ -36,9 +34,7 @@ export function AppDeleteDialog({
 }: DeleteConfirmDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  // --------------------------------------
-  // ✅ 기본 트리거 버튼 메모이징
-  // --------------------------------------
+  // 기본 트리거 버튼
   const defaultTrigger = useMemo(
     () => (
       <Button size="icon" className="text-white bg-red-500/80 hover:bg-red-400/80" title="삭제">
@@ -48,10 +44,7 @@ export function AppDeleteDialog({
     []
   );
 
-  // --------------------------------------
-  // ✅ 삭제 실행 핸들러 (useCallback)
-  //    props가 변해도 handleConfirm은 불필요한 재생성 방지
-  // --------------------------------------
+  // 삭제 실행 핸들러
   const handleConfirm = useCallback(async () => {
     try {
       setIsLoading(true);

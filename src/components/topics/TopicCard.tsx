@@ -1,10 +1,4 @@
-/**
- * @file TopicCard.tsx
- * @description 토픽 목록의 메인 카드 컴포넌트입니다.
- * - 시각적 균형을 위해 제목 2줄, 본문 2줄로 제한 (Line-clamp)
- * - BlockNote 데이터 구조를 위한 정교한 타입 정의 (any 제거)
- * - transform-gpu 및 will-change를 통한 스크롤 성능 최적화
- */
+// 토픽 목록 카드 컴포넌트
 
 'use client';
 
@@ -22,9 +16,7 @@ import type { Topic } from '@/types/topic.type';
 dayjs.extend(relativeTime);
 dayjs.locale('ko');
 
-// -----------------------------------------------------------------------------
-// 🔹 1. 정교한 타입 정의 (Portfolio Quality)
-// -----------------------------------------------------------------------------
+// 타입 정의
 interface ContentChild {
   text?: string;
 }
@@ -33,10 +25,7 @@ interface ContentBlock {
   content?: ContentChild[];
 }
 
-/**
- * @function extractTextFromContent
- * @description JSON 구조의 본문 데이터에서 순수 텍스트만 추출하여 미리보기를 생성합니다.
- */
+// JSON 구조의 본문 데이터에서 텍스트 추출
 const extractTextFromContent = (content: string | ContentBlock[], maxChars = 140): string => {
   try {
     const parsed = typeof content === 'string' ? JSON.parse(content) : content;
@@ -64,9 +53,7 @@ interface Props {
   authorNickname?: string;
 }
 
-// -----------------------------------------------------------------------------
-// 🔹 2. Main Component
-// -----------------------------------------------------------------------------
+// Main Component
 const TopicCardComponent = ({ props, authorNickname }: Props) => {
   const navigate = useNavigate();
 

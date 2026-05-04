@@ -9,7 +9,7 @@ export type CommentItem = {
   email?: string;
 };
 
-// 🔹 댓글 목록
+// 댓글 목록
 export const fetchComments = async (topicId: number, from: number, to: number) => {
   const { data, error } = await supabase
     .from('comment_user_view')
@@ -22,7 +22,7 @@ export const fetchComments = async (topicId: number, from: number, to: number) =
   return (data ?? []) as CommentItem[];
 };
 
-// 🔹 댓글 개수 조회
+// 댓글 개수 조회
 export const fetchCommentsCount = async (topicId: number): Promise<number> => {
   const { count, error } = await supabase
     .from('comment')
@@ -34,7 +34,7 @@ export const fetchCommentsCount = async (topicId: number): Promise<number> => {
   return count ?? 0;
 };
 
-// 🔹 댓글 추가
+// 댓글 추가
 export const addComment = async (topicId: number, text: string) => {
   const { data: auth } = await supabase.auth.getUser();
   const user = auth?.user;
@@ -56,7 +56,7 @@ export const addComment = async (topicId: number, text: string) => {
   return { ...data, email: user.email };
 };
 
-// 🔹 댓글 단건 조회 (realtime insert 이벤트용)
+// 댓글 단건 조회
 export const fetchCommentById = async (commentId: number): Promise<CommentItem | null> => {
   const { data, error } = await supabase
     .from('comment_user_view')
@@ -68,7 +68,7 @@ export const fetchCommentById = async (commentId: number): Promise<CommentItem |
   return (data as CommentItem) ?? null;
 };
 
-// 🔹 삭제
+// 삭제
 export const deleteComment = async (commentId: number) => {
   const { error } = await supabase.from('comment').delete().eq('id', commentId);
   if (error) throw error;

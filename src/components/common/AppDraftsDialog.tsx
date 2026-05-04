@@ -1,10 +1,4 @@
-/**
- * @file AppDraftsDialog.tsx
- * @description
- * - React.memo와 useMemo를 결합한 극강의 렌더링 최적화
- * - '방금 전', 'n시간 전' 등 상대 시간 UI 및 호버 인터랙션 구현
- * - GPU 가속 및 레이아웃 격리(Containment)를 통한 스크롤 성능 확보
- */
+// 임시 저장 보관함 다이얼로그
 
 import type React from 'react';
 import { useCallback, useMemo, useState, memo } from 'react';
@@ -38,9 +32,7 @@ import { Loader2, Inbox, Clock } from 'lucide-react';
 dayjs.extend(relativeTime);
 dayjs.locale('ko');
 
-// ----------------------------------------------------------------------
-// 🔹 타입 정의
-// ----------------------------------------------------------------------
+// 타입 정의
 interface Draft {
   id: number;
   title: string;
@@ -54,15 +46,13 @@ interface DraftItemProps {
   onDelete: (id: number) => void;
 }
 
-// ----------------------------------------------------------------------
-// 🔹 개별 리스트 아이템 (성능 최적화를 위한 메모이제이션)
-// ----------------------------------------------------------------------
+// 개별 리스트 아이템
 const DraftItem = memo(({ draft, index, onNavigate, onDelete }: DraftItemProps) => {
   return (
     <div
       onClick={() => onNavigate(draft.id)}
       className="group flex items-center justify-between py-3 px-3 border-b border-white/5 hover:bg-slate-900/50 transition-all cursor-pointer rounded-lg"
-      style={{ transform: 'translateZ(0)' }} // GPU 가속 유도
+      style={{ transform: 'translateZ(0)' }}
     >
       <div className="flex items-center gap-3 overflow-hidden">
         <span className="text-[10px] font-black text-slate-600 group-hover:text-indigo-400 transition-colors">
@@ -103,9 +93,7 @@ const DraftItem = memo(({ draft, index, onNavigate, onDelete }: DraftItemProps) 
 
 DraftItem.displayName = 'DraftItem';
 
-// ----------------------------------------------------------------------
-// 🔹 메인 다이얼로그 컴포넌트
-// ----------------------------------------------------------------------
+// 메인 다이얼로그 컴포넌트
 export function AppDraftsDialog({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -138,7 +126,7 @@ export function AppDraftsDialog({ children }: { children: React.ReactNode }) {
     [queryClient, user?.id]
   );
 
-  // 🔹 리스트 렌더링 최적화 (useMemo 적용)
+  // 리스트 렌더링 최적화
   const renderedDrafts = useMemo(() => {
     if (isLoading) {
       return (
@@ -215,7 +203,7 @@ export function AppDraftsDialog({ children }: { children: React.ReactNode }) {
           <div
             className="w-full mt-3 max-h-[280px] overflow-y-auto scrollbar-hide space-y-1"
             style={{
-              contain: 'content', // 레이아웃 격리를 통한 스크롤 최적화
+              contain: 'content',
               WebkitOverflowScrolling: 'touch',
             }}
           >

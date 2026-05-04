@@ -1,8 +1,4 @@
-/**
- * @file SignUp.tsx
- * @description 사용자 회원가입 페이지.
- * 유효성 검사(Zod), 상태 관리(AuthStore), 약관 동의 로직이 통합된 구조입니다.
- */
+// 회원가입 페이지
 
 import { useEffect, useState, useCallback } from 'react';
 import { NavLink, useNavigate } from 'react-router';
@@ -28,9 +24,7 @@ import {
   Separator,
 } from '@/components/ui';
 
-// —————————————————————————————————————————————————————————————————————————————
-// 🔹 Zod Schema: 클라이언트 측 유효성 검사 정의
-// —————————————————————————————————————————————————————————————————————————————
+// Zod Schema
 const formSchema = z
   .object({
     email: z.string().email('올바른 이메일 주소를 입력해주세요.'),
@@ -50,18 +44,18 @@ const formSchema = z
 export default function SignUp() {
   const navigate = useNavigate();
 
-  // Auth Store 상태 및 액션
+  // Auth Store 상태
   const user = useAuthStore((state) => state.user);
   const signUp = useAuthStore((state) => state.signUp);
   const loading = useAuthStore((state) => state.loading);
 
-  // 1. React Hook Form 초기화
+  // React Hook Form 초기화
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: '', password: '', confirmPassword: '' },
   });
 
-  // 2. 약관 동의 상태 관리 (필수 2, 선택 1)
+  // 약관 동의 상태
   const [serviceAgreed, setServiceAgreed] = useState(false);
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [marketingAgreed, setMarketingAgreed] = useState(false);
@@ -70,15 +64,12 @@ export default function SignUp() {
   const handleCheckPrivacy = useCallback(() => setPrivacyAgreed((prev) => !prev), []);
   const handleCheckMarketing = useCallback(() => setMarketingAgreed((prev) => !prev), []);
 
-  // 3. 인증 상태 감지: 로그인된 사용자는 메인으로 리다이렉트
+  // 인증 상태 감지
   useEffect(() => {
     if (user) navigate('/');
   }, [user, navigate]);
 
-  /**
-   * @description 회원가입 폼 제출 핸들러
-   * @param values - Zod로 검증된 폼 데이터
-   */
+  // 회원가입 폼 제출 핸들러
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!serviceAgreed || !privacyAgreed) {
       toast.warning('필수 동의항목을 체크해주세요.');
@@ -108,14 +99,14 @@ export default function SignUp() {
 
   return (
     <main className="relative w-full min-h-screen flex items-center justify-center p-4 mt-24 mb-12 overflow-hidden">
-      {/* Background Decorative Glow (포트폴리오용 시각 효과) */}
+      {/* Background Decorative Glow */}
       <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-500/10 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-indigo-500/10 blur-[100px] rounded-full pointer-events-none" />
 
       <div className="w-full max-w-[440px] z-10">
-        {/* 회원가입 카드 컨테이너 */}
+        {/* 회원가입 카드 */}
         <section className="backdrop-blur-xl bg-slate-900/40 border border-white/10 rounded-[32px] p-8 md:p-10 shadow-2xl">
-          {/* 헤더 섹션 */}
+          {/* 헤더 */}
           <header className="flex flex-col items-center text-center gap-4 mb-10">
             <div className="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-2">
               <UserPlus className="text-purple-400" size={28} />
@@ -132,7 +123,7 @@ export default function SignUp() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* 입력 필드 그룹 */}
+              {/* 입력 필드 */}
               <div className="space-y-4">
                 <FormField
                   control={form.control}
@@ -189,7 +180,7 @@ export default function SignUp() {
                 />
               </div>
 
-              {/* 약관 동의 섹션 */}
+              {/* 약관 동의 */}
               <div className="bg-slate-950/30 rounded-2xl p-5 border border-white/5 space-y-4">
                 <div className="flex items-center gap-2 mb-1">
                   <Asterisk size={14} className="text-purple-400" />
@@ -199,7 +190,7 @@ export default function SignUp() {
                 </div>
 
                 <div className="space-y-3">
-                  {/* 이용약관 동의 */}
+                  {/* 이용약관 */}
                   <div className="flex items-center justify-between group">
                     <div className="flex items-center gap-3">
                       <Checkbox
@@ -223,7 +214,7 @@ export default function SignUp() {
                     </Button>
                   </div>
 
-                  {/* 개인정보 동의 */}
+                  {/* 개인정보 */}
                   <div className="flex items-center justify-between group">
                     <div className="flex items-center gap-3">
                       <Checkbox
@@ -250,7 +241,7 @@ export default function SignUp() {
 
                 <Separator className="bg-white/5" />
 
-                {/* 마케팅 동의 */}
+                {/* 마케팅 */}
                 <div className="flex items-center justify-between group">
                   <div className="flex items-center gap-3">
                     <Checkbox
@@ -275,7 +266,7 @@ export default function SignUp() {
                 </div>
               </div>
 
-              {/* 하단 액션 버튼 */}
+              {/* 하단 버튼 */}
               <footer className="flex flex-col gap-4 pt-2">
                 <div className="flex items-center gap-3">
                   <Button

@@ -3,17 +3,13 @@ import { nanoid } from 'nanoid';
 import type { Topic } from '@/types/topic.type';
 import { TOPIC_STATUS } from '@/types/topic.type';
 
-// ======================================================
-// 🔹 타입
-// ======================================================
+// 타입
 export type TopicInsertWithoutAuthor = Omit<
   Topic,
   'id' | 'created_at' | 'author' | 'views' | 'likes'
 >;
 
-// ======================================================
-// 🔹 목록 조회
-// ======================================================
+// 목록 조회
 type FetchTopicsParams = {
   category: string;
   searchQuery: string;
@@ -53,9 +49,7 @@ export const fetchTopics = async (filters: FetchTopicsParams) => {
   };
 };
 
-// ======================================================
-// 🔹 단일 조회
-// ======================================================
+// 단일 조회
 export const fetchTopicById = async (id?: string): Promise<Topic | null> => {
   if (!id) return null;
 
@@ -65,9 +59,7 @@ export const fetchTopicById = async (id?: string): Promise<Topic | null> => {
   return data;
 };
 
-// ======================================================
-// 🔹 썸네일 업로드
-// ======================================================
+// 썸네일 업로드
 export const uploadThumbnail = async (file: File | string | null) => {
   if (!file) return null;
 
@@ -87,9 +79,7 @@ export const uploadThumbnail = async (file: File | string | null) => {
   return typeof file === 'string' ? file : null;
 };
 
-// ======================================================
-// 🔹 insert
-// ======================================================
+// insert
 export const insertTopic = async (userId: string, payload: TopicInsertWithoutAuthor) => {
   const { data, error } = await supabase
     .from('topic')
@@ -101,25 +91,19 @@ export const insertTopic = async (userId: string, payload: TopicInsertWithoutAut
   return data.id as number;
 };
 
-// ======================================================
-// 🔹 update
-// ======================================================
+// update
 export const updateTopic = async (id: string, payload: TopicInsertWithoutAuthor) => {
   const { error } = await supabase.from('topic').update(payload).eq('id', id);
   if (error) throw error;
 };
 
-// ======================================================
-// 🔹 delete
-// ======================================================
+// delete
 export const deleteTopic = async (id: number) => {
   const { error } = await supabase.from('topic').delete().eq('id', id);
   if (error) throw error;
 };
 
-// ======================================================
-// 🔹 조회수 증가
-// ======================================================
+// 조회수 증가
 export const increaseViews = async (topicId: number) => {
   const { error } = await supabase.rpc('increment_topic_views', {
     topic_id: topicId,
@@ -128,9 +112,7 @@ export const increaseViews = async (topicId: number) => {
   if (error) throw error;
 };
 
-// ======================================================
-// 🔹 좋아요 토글
-// ======================================================
+// 좋아요 토글
 export const toggleLike = async (topicId: number) => {
   const { error } = await supabase.rpc('toggle_topic_like', {
     p_topic_id: topicId,
@@ -139,9 +121,7 @@ export const toggleLike = async (topicId: number) => {
   if (error) throw error;
 };
 
-// ======================================================
-// 🔹 임시 저장 조회
-// ======================================================
+// 임시 저장 조회
 export const fetchDrafts = async (userId: string) => {
   const { data, error } = await supabase
     .from('topic')

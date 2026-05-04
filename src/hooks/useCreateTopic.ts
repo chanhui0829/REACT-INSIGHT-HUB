@@ -19,7 +19,6 @@ type Payload = {
 export const useSaveTopic = () => {
   const queryClient = useQueryClient();
 
-  // 리턴 타입을 { id: any }로 열어버려서 컴포넌트에서의 마찰을 없앱니다.
   return useMutation<{ id: number | string }, Error, Payload>({
     mutationFn: async (data) => {
       const { id, userId, buildPayload, thumbnail } = data;

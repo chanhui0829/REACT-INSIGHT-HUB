@@ -1,8 +1,6 @@
 /**
- * @file App.tsx
- * @description Insight Hub 메인 피드 컴포넌트.
- * URL 기반의 상태 관리(Source of Truth)를 통해 뒤로가기/새로고침 대응 및
- * TanStack Query의 Prefetching을 활용한 고성능 페이지네이션을 구현했습니다.
+ * 메인 피드 컴포넌트
+ * URL 기반 상태 관리와 TanStack Query를 활용한 페이지네이션 구현
  */
 
 import { useMemo, useCallback, useEffect, useState, useRef, useTransition } from 'react';
@@ -42,23 +40,20 @@ function App() {
   const user = useAuthStore((s) => s.user);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  /**
-   * [개선 사항] URL SearchParams를 단일 원천(Single Source of Truth)으로 사용
-   * 별도의 useState 없이 URL의 변화가 직접 UI 상태를 결정하도록 설계되었습니다.
-   */
+  // URL SearchParams를 상태 관리의 단일 원천으로 사용
   const category = searchParams.get('category') ?? 'all';
   const sortOption = searchParams.get('sort') ?? 'latest';
   const searchQuery = searchParams.get('q') ?? '';
   const [searchInput, setSearchInput] = useState(searchQuery);
 
-  // Infinite scroll state
+  // 인피니트 스크롤 상태
   const [displayedTopics, setDisplayedTopics] = useState<Topic[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const loaderRef = useRef<HTMLDivElement>(null);
   const [isPending, startTransition] = useTransition();
 
-  // 페이지당 아이템 수 및 데이터 범위 계산
+  // 페이지당 아이템 수 및 데이터 범위
   const ITEMS_PER_PAGE = 12;
   const MAX_DISPLAYED_ITEMS = 60; // 메모리 최적화를 위해 최대 60개만 유지
   const { startIndex, endIndex } = useMemo(() => {
@@ -66,7 +61,7 @@ function App() {
     return { startIndex: start, endIndex: start + ITEMS_PER_PAGE - 1 };
   }, [page]);
 
-  // 데이터 fetch를 위한 필터 객체 memoization
+  // 데이터 fetch 필터 객체
   const filters = useMemo(
     () => ({ category, searchQuery, sortOption, startIndex, endIndex }),
     [category, searchQuery, sortOption, startIndex, endIndex]
@@ -75,39 +70,39 @@ function App() {
   // 데이터 fetching
   const { data, isLoading, isFetching } = useTopicList(filters, page);
 
-  // 새 데이터가 로드되면 displayedTopics에 추가 (useTransition으로 비차단적 업데이트)
+  // 새 데이터 로드 시 displayedTopics에 추가
   useEffect(() => {
     if (data?.topics) {
       startTransition(() => {
         setDisplayedTopics((prev) => {
           const newTopics = page === 1 ? data.topics : [...prev, ...data.topics];
-          // 메모리 최적화: 최대 60개만 유지, 오래된 데이터 제거
+          // 메모리 최적화: 최대 60개만 유지
           return newTopics.length > MAX_DISPLAYED_ITEMS
             ? newTopics.slice(-MAX_DISPLAYED_ITEMS)
             : newTopics;
         });
-        // 더 이상 불러올 데이터가 있는지 확인
+        // 더 불러올 데이터 확인
         const totalLoaded = page * ITEMS_PER_PAGE;
         setHasMore(totalLoaded < (data?.total ?? 0));
       });
     }
   }, [data, page]);
 
-  // 필터가 변경되면 페이지 초기화
+  // 필터 변경 시 페이지 초기화
   useEffect(() => {
     setPage(1);
     setDisplayedTopics([]);
     setHasMore(true);
   }, [category, searchQuery, sortOption]);
 
-  // Intersection Observer for infinite scroll (with debounce)
+  // 인피니트 스크롤을 위한 Intersection Observer
   useEffect(() => {
     let debounceTimer: NodeJS.Timeout;
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasMore && !isFetching) {
-          // 디바운스: 빠른 스크롤 시 너무 자주 페이지 증가 방지
+          // 디바운스: 빠른 스크롤 시 페이지 증가 방지
           clearTimeout(debounceTimer);
           debounceTimer = setTimeout(() => {
             setPage((prev) => prev + 1);
@@ -130,10 +125,10 @@ function App() {
   }, [hasMore, isFetching]);
 
   const topics = displayedTopics;
-  // 메모이제이션 최적화: authorIds가 변경될 때만 재계산
+  // authorIds 메모이제이션
   const authorIds = useMemo(() => {
     const ids = topics.map((topic) => topic.author);
-    // 중복 제거하여 불필요한 쿼리 방지
+    // 중복 제거
     return [...new Set(ids)];
   }, [topics]);
 
@@ -141,17 +136,13 @@ function App() {
     queryKey: ['user', 'nicknames', authorIds.sort().join(',')],
     queryFn: () => getUserNicknames(authorIds),
     enabled: authorIds.length > 0,
-    staleTime: 1000 * 60 * 30, // 30분 캐싱으로 쿼리 빈도 감소
-    gcTime: 1000 * 60 * 60, // 1시간 가비지 컬렉션
+    staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60,
   });
 
-  // —————————————————————————————————————————————————————————————————————————————
   // Handlers
-  // —————————————————————————————————————————————————————————————————————————————
 
-  /**
-   * 공통 URL 상태 업데이트 함수
-   */
+  // URL 상태 업데이트 함수
   const updateParams = useCallback(
     (newParams: Record<string, string>) => {
       setSearchParams(
@@ -210,7 +201,7 @@ function App() {
 
   return (
     <main className="w-full flex flex-col items-start mt-28 px-4 md:px-6 max-w-[1400px] mx-auto mb-32">
-      {/* 🚀 Sticky Action Group */}
+      {/* Sticky Action Group */}
       <div className="fixed left-1/2 bottom-8 -translate-x-1/2 z-50">
         <div className="flex items-center gap-2 p-2.5 rounded-full bg-slate-950/90 backdrop-blur-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <Button

@@ -1,8 +1,4 @@
-/**
- * @file SignIn.tsx
- * @description 사용자 인증(로그인) 페이지.
- * Google OAuth 및 이메일/비밀번호 기반 로그인을 지원하며, 회원가입 페이지와 디자인 시스템을 공유합니다.
- */
+// 로그인 페이지
 
 import { useEffect, useCallback } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router';
@@ -29,9 +25,7 @@ import {
   PasswordInput,
 } from '@/components/ui';
 
-// —————————————————————————————————————————————————————————————————————————————
-// 🔹 Validation Schema: 보안 강화를 위한 패스워드 정규식 포함
-// —————————————————————————————————————————————————————————————————————————————
+// Validation Schema
 const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$&*?!%])[A-Za-z\d!@$%&*?]{8,15}$/;
 
 const formSchema = z.object({
@@ -51,31 +45,27 @@ export default function SignIn() {
   const login = useAuthStore((state) => state.login);
   const loading = useAuthStore((state) => state.loading);
 
-  // 회원가입 페이지로부터 전달받은 이메일 우선 적용 (UX 최적화)
+  // 회원가입 페이지에서 전달받은 이메일
   const prefillEmail = location.state?.email || '';
 
-  // 1. React Hook Form 초기화
+  // React Hook Form 초기화
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: prefillEmail, password: '' },
   });
 
-  // 2. 인증 상태 감지: 로그인된 사용자는 즉시 홈으로 이동
+  // 인증 상태 감지
   useEffect(() => {
     if (user) navigate('/');
   }, [user, navigate]);
 
-  /**
-   * @description Google 소셜 로그인 핸들러
-   */
+  // Google 소셜 로그인 핸들러
   const handleGoogleSignIn = useCallback(async () => {
     const { error } = await signInWithGoogleService();
     if (error) toast.error(error.message);
   }, []);
 
-  /**
-   * @description 일반 이메일/비밀번호 로그인 핸들러
-   */
+  // 이메일/비밀번호 로그인 핸들러
   const onSubmit = useCallback(
     async (values: z.infer<typeof formSchema>) => {
       try {
@@ -97,14 +87,14 @@ export default function SignIn() {
 
   return (
     <main className="relative w-full min-h-screen flex items-center justify-center mt-24 my-12 overflow-hidden">
-      {/* Background Decorative Glow (회원가입 페이지와 대칭) */}
+      {/* Background Decorative Glow */}
       <div className="absolute top-[-5%] left-[-5%] w-[450px] h-[450px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-5%] right-[-5%] w-[450px] h-[450px] bg-purple-500/10 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="w-full max-w-[420px] z-10">
-        {/* 로그인 카드 컨테이너 */}
+        {/* 로그인 카드 */}
         <section className="backdrop-blur-2xl bg-slate-900/40 border border-white/10 rounded-[32px] p-8 md:p-10 shadow-2xl">
-          {/* 헤더 섹션 */}
+          {/* 헤더 */}
           <header className="flex flex-col items-center text-center gap-4 mb-10">
             <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-2">
               <Command className="text-indigo-400" size={28} />
@@ -120,7 +110,7 @@ export default function SignIn() {
           </header>
 
           <div className="flex flex-col gap-6">
-            {/* 1. 소셜 로그인 (Google) */}
+            {/* 소셜 로그인 */}
             <Button
               type="button"
               variant="outline"
@@ -141,7 +131,7 @@ export default function SignIn() {
               </div>
             </div>
 
-            {/* 2. 일반 로그인 폼 */}
+            {/* 일반 로그인 폼 */}
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                 <div className="space-y-4">

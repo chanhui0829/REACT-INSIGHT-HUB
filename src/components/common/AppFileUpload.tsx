@@ -12,9 +12,7 @@ export function AppFileUpload({ file, onChange }: Props) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // ------------------------------------------------------
-  // 🔥 File 객체일 경우 preview URL 미리 계산 (useMemo)
-  // ------------------------------------------------------
+  // File 객체일 경우 preview URL 미리 계산
   const previewUrl = useMemo(() => {
     if (file instanceof File) {
       return URL.createObjectURL(file);
@@ -31,13 +29,11 @@ export function AppFileUpload({ file, onChange }: Props) {
     }
   }, [file, previewUrl]);
 
-  // ------------------------------------------------------
-  // 🔥 이벤트 핸들러 (useCallback으로 메모이징)
-  // ------------------------------------------------------
+  // 이벤트 핸들러
   const handleChangeFile = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       onChange(event.target.files?.[0] ?? null);
-      event.target.value = ''; // input reset
+      event.target.value = '';
     },
     [onChange]
   );
@@ -70,11 +66,9 @@ export function AppFileUpload({ file, onChange }: Props) {
     onChange(null);
   }, [onChange]);
 
-  // ------------------------------------------------------
-  // 🔥 Preview 영역 useMemo로 캐싱
-  // ------------------------------------------------------
+  // Preview 영역
   const preview = useMemo(() => {
-    // 이미지가 존재하는 경우 (URL or File)
+    // 이미지가 존재하는 경우
     if (previewUrl) {
       return (
         <div className="relative group">
@@ -115,9 +109,7 @@ export function AppFileUpload({ file, onChange }: Props) {
     );
   }, [previewUrl, isDragOver, handleDrop, handleDragOver, handleDragLeave, handleRemove]);
 
-  // ------------------------------------------------------
-  // 🔥 UI
-  // ------------------------------------------------------
+  // UI
   return (
     <div className="space-y-3">
       {preview}
