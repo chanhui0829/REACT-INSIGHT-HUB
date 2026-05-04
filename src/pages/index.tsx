@@ -75,18 +75,23 @@ function App() {
     if (data?.topics) {
       startTransition(() => {
         setDisplayedTopics((prev) => {
-          const newTopics = page === 1 ? data.topics : [...prev, ...data.topics];
+          // ID 기반 중복 제거
+          const existingIds = new Set(prev.map(t => t.id));
+          const uniqueNewTopics = data.topics.filter(t => !existingIds.has(t.id));
+          
+          const newTopics = page === 1 ? data.topics : [...prev, ...uniqueNewTopics];
+          
           // 메모리 최적화: 최대 60개만 유지
           return newTopics.length > MAX_DISPLAYED_ITEMS
             ? newTopics.slice(-MAX_DISPLAYED_ITEMS)
             : newTopics;
         });
-        // 더 불러올 데이터 확인
-        const totalLoaded = page * ITEMS_PER_PAGE;
-        setHasMore(totalLoaded < (data?.total ?? 0));
+        // 더 불러올 데이터 확인 - 실제로 로드된 데이터 개수로 판단
+        const actualLoaded = displayedTopics.length + data.topics.length;
+        setHasMore(actualLoaded < (data?.total ?? 0) && data.topics.length > 0);
       });
     }
-  }, [data, page]);
+  }, [data, page, displayedTopics.length]);
 
   // 필터 변경 시 페이지 초기화
   useEffect(() => {
