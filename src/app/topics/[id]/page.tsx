@@ -16,7 +16,7 @@ import * as React from 'react';
 import { useAuthStore } from '@/stores';
 import { AppDeleteDialog, AppEditor } from '@/components/common';
 import { Button, Badge } from '@/components/ui';
-import CommentBox from '@/components/topics/comment';
+import {CommentBox} from '@/components/topics';
 import { getUserNickname } from '@/services/useService';
 
 import {
