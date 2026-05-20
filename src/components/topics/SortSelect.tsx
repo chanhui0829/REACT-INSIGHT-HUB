@@ -5,11 +5,12 @@
 
 'use client';
 
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 import { SORT_CATEGORY } from '@/constants/sort.constant';
 
-export function SortSelect() {
+function SortSelectContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const category = searchParams.get('category') ?? 'all';
@@ -38,5 +39,13 @@ export function SortSelect() {
         </SelectContent>
       </Select>
     </div>
+  );
+}
+
+export function SortSelect() {
+  return (
+    <Suspense fallback={null}>
+      <SortSelectContent />
+    </Suspense>
   );
 }

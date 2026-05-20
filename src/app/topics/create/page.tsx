@@ -1,11 +1,11 @@
 /**
  * @file CreateTopic.tsx
- * @description 스크롤 성능 최적화 및 '임시 저장' 레이어 UI가 적용된 최종본입니다.
+ * @description 새 토픽 생성 페이지입니다.
  */
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -55,7 +55,7 @@ const parseEditorContent = (raw: string | null | undefined): Block[] => {
   }
 };
 
-export default function CreateTopicPage() {
+function CreateTopicContent() {
   const user = useAuthStore((state) => state.user);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -177,9 +177,8 @@ export default function CreateTopicPage() {
           </Button>
 
           <div className="w-px h-5 bg-slate-800 " />
-          {/* 📍 임시 저장 섹션  */}
+          {/* 임시 저장 버튼  */}
           <div className="relative flex items-center justify-center ">
-            {/* 임시 저장 버튼: 외곽선과 배경을 명확히 주어 배지 위에 얹혀진 느낌 구현 */}
             <Button
               variant="secondary"
               onClick={handleSave}
@@ -307,5 +306,13 @@ export default function CreateTopicPage() {
         </aside>
       </div>
     </main>
+  );
+}
+
+export default function CreateTopicPage() {
+  return (
+    <Suspense fallback={null}>
+      <CreateTopicContent />
+    </Suspense>
   );
 }

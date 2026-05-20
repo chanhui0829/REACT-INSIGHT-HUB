@@ -1,8 +1,6 @@
-// 로그인 페이지
-
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -38,7 +36,7 @@ const formSchema = z.object({
     .regex(passwordRegex, '영문, 숫자, 특수문자를 포함해야 합니다.'),
 });
 
-export default function SignInPage() {
+function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -208,5 +206,13 @@ export default function SignInPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignInContent />
+    </Suspense>
   );
 }
