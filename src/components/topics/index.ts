@@ -6,4 +6,4 @@
 export { TopicCard } from './TopicCard';
 export { CommentBox } from './comment';
 export { TopicList } from './TopicList';
-export { default as SortSelect } from './SortSelect';
+export { SortSelect } from './SortSelect';

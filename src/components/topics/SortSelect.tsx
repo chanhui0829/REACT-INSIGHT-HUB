@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 import { SORT_CATEGORY } from '@/constants/sort.constant';
 
-export default function SortSelect() {
+export function SortSelect() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const category = searchParams.get('category') ?? 'all';

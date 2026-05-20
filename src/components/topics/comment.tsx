@@ -29,7 +29,7 @@ interface CommentBoxProps {
   topicId: number;
 }
 
-export default function CommentBox({ topicId }: CommentBoxProps) {
+export function CommentBox({ topicId }: CommentBoxProps) {
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const newCommentRef = useRef<HTMLTextAreaElement | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
