@@ -1,3 +1,11 @@
+/**
+ * @file form.tsx
+ * @description Form 컴포넌트입니다.
+ * react-hook-form과 Radix UI를 기반으로 합니다.
+ */
+
+'use client';
+
 import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"

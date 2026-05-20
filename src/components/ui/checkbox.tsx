@@ -1,3 +1,9 @@
+/**
+ * @file checkbox.tsx
+ * @description Checkbox 컴포넌트입니다.
+ * Radix UI의 Checkbox를 기반으로 합니다.
+ */
+
 import * as React from "react"
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
 import { CheckIcon } from "lucide-react"

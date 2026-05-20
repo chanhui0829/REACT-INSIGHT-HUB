@@ -1,3 +1,8 @@
+/**
+ * @file textarea.tsx
+ * @description Textarea 컴포넌트입니다.
+ */
+
 import * as React from "react"
 
 import { cn } from "@/lib/utils"

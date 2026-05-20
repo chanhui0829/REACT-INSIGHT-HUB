@@ -1,6 +1,14 @@
+/**
+ * @file AppFileUpload.tsx
+ * @description 파일 업로드 컴포넌트입니다.
+ * 드래그 앤 드롭과 클릭으로 이미지를 업로드할 수 있습니다.
+ */
+
+'use client';
+
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import type { DragEvent as ReactDragEvent } from 'react';
-import { Button, Input } from '../ui';
+import { Button, Input } from '@/components/ui';
 import { Image, Trash2 } from 'lucide-react';
 
 interface Props {
@@ -12,7 +20,6 @@ export function AppFileUpload({ file, onChange }: Props) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // File 객체일 경우 preview URL 미리 계산
   const previewUrl = useMemo(() => {
     if (file instanceof File) {
       return URL.createObjectURL(file);
@@ -20,7 +27,6 @@ export function AppFileUpload({ file, onChange }: Props) {
     return typeof file === 'string' ? file : null;
   }, [file]);
 
-  // Blob URL 누수 방지
   useEffect(() => {
     if (file instanceof File) {
       return () => {
@@ -29,7 +35,6 @@ export function AppFileUpload({ file, onChange }: Props) {
     }
   }, [file, previewUrl]);
 
-  // 이벤트 핸들러
   const handleChangeFile = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       onChange(event.target.files?.[0] ?? null);
@@ -66,9 +71,7 @@ export function AppFileUpload({ file, onChange }: Props) {
     onChange(null);
   }, [onChange]);
 
-  // Preview 영역
   const preview = useMemo(() => {
-    // 이미지가 존재하는 경우
     if (previewUrl) {
       return (
         <div className="relative group">
@@ -90,7 +93,6 @@ export function AppFileUpload({ file, onChange }: Props) {
       );
     }
 
-    // 기본 상태
     return (
       <div
         className={`w-full flex flex-col items-center justify-center aspect-video rounded-lg border-2 border-dashed 
@@ -109,9 +111,8 @@ export function AppFileUpload({ file, onChange }: Props) {
     );
   }, [previewUrl, isDragOver, handleDrop, handleDragOver, handleDragLeave, handleRemove]);
 
-  // UI
   return (
-    <div className="space-y-3">
+    <div className="">
       {preview}
 
       <Input

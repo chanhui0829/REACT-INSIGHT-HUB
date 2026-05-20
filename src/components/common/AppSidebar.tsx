@@ -1,8 +1,14 @@
-import { motion } from 'framer-motion';
+/**
+ * @file AppSidebar.tsx
+ * @description 사이드바 컴포넌트입니다.
+ * 카테고리 필터링을 제공합니다.
+ */
+
+'use client';
 
 import { useState, useMemo } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { Button } from '../ui';
+import { Button } from '@/components/ui';
 import { CLASS_CATEGORY } from '@/constants/category.constant';
 
 interface Props {
@@ -19,12 +25,7 @@ function AppSidebar({ category, setCategory }: Props) {
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
-      className="flex flex-col w-full select-none"
-    >
+    <div className="flex flex-col w-full select-none">
       <div className="flex flex-col w-full select-none">
         <div
           onClick={() => setIsOpen(!isOpen)}
@@ -70,14 +71,6 @@ function AppSidebar({ category, setCategory }: Props) {
                   {isActive && (
                     <div className="absolute left-0 w-1 h-5 bg-emerald-500 rounded-r-full" />
                   )}
-
-                  <span
-                    className={`shrink-0 transition-transform duration-300 ${
-                      isActive ? 'scale-110' : 'group-hover:scale-110'
-                    }`}
-                  >
-                    {menu.icon}
-                  </span>
                   <span className="ml-3 text-[14px]">{menu.label}</span>
                 </Button>
               );
@@ -85,7 +78,7 @@ function AppSidebar({ category, setCategory }: Props) {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 

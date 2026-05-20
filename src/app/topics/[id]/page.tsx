@@ -1,15 +1,22 @@
+/**
+ * @file page.tsx
+ * @description 토픽 상세 보기 페이지입니다.
+ * JSON 형식의 콘텐츠를 AppEditor로 렌더링합니다.
+ */
+
 'use client';
 
 import { useEffect, useCallback, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
 import { ArrowLeft, Eye, Heart, Calendar, Share2, User, Bookmark, Link2, Printer, TrendingUp } from 'lucide-react';
+import * as React from 'react';
 
 import { useAuthStore } from '@/stores';
 import { AppDeleteDialog, AppEditor } from '@/components/common';
 import { Button, Badge } from '@/components/ui';
-import CommentBox from './comment';
+import CommentBox from '@/components/topics/comment';
 import { getUserNickname } from '@/services/useService';
 
 import {
@@ -49,10 +56,10 @@ const parseEditorContent = (raw: string | Block[] | null | undefined): Block[] =
   }
 };
 
-export default function TopicDetail() {
-  const { id } = useParams();
+export default function TopicDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params);
   const topicId = Number(id);
-  const navigate = useNavigate();
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
 
   const { data: topic, isLoading } = useTopicDetail(topicId);
@@ -84,6 +91,7 @@ export default function TopicDetail() {
     if (topicId) increaseViews.mutate();
   }, [topicId]);
 
+  // Realtime 구독
   useEffect(() => {
     if (!topicId) return;
 
@@ -105,32 +113,29 @@ export default function TopicDetail() {
     try {
       await deleteMutation.mutateAsync();
       toast.success('토픽이 삭제되었습니다.');
-      navigate('/');
+      router.push('/');
     } catch (err) {
       console.error(err);
       toast.error('삭제 처리 중 오류가 발생했습니다.');
     }
-  }, [deleteMutation, navigate]);
+  }, [deleteMutation, router]);
 
   if (isLoading && !topic) return <div className="min-h-screen bg-[#0a0a0a]" />;
 
   return (
-    /* 1. pt를 통해 fixed 헤더 높이(66px)만큼 정확히 밀어냄 */
     <main className="relative w-full min-h-screen bg-[#0a0a0a] text-zinc-100 pt-[66px] overflow-x-hidden">
-      {/* 2. 배경 이미지 영역: w-full + max-w-none으로 부모 제약 해제 */}
       <header className="relative w-full h-[400px] md:h-[450px] overflow-hidden">
-        {/* 이미지가 꽉 안 차는 문제를 방지하기 위해 110% 너비로 강제 확장 후 중앙 정렬 */}
         <div
           className="absolute inset-0 w-screen left-1/2 -translate-x-1/2 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${topic?.thumbnail || '/assets/default-thumbnail.png'})` }}
         />
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
-        <div className="absolute inset-0 bg-linear-to-t from-[#0a0a0a] via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent" />
 
         <nav className="relative z-20 w-full max-w-7xl mx-auto px-6 pt-6 flex justify-between items-center">
           <Button
             variant="ghost"
-            onClick={() => navigate(-1)}
+            onClick={() => router.back()}
             className="rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-white px-5 h-10 text-xs font-bold hover:bg-white/10 transition-all"
           >
             <ArrowLeft size={16} className="mr-2" /> Back
@@ -144,7 +149,7 @@ export default function TopicDetail() {
               variant="ghost"
               size="icon"
               aria-label="토픽 공유"
-              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-white "
+              className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 text-white"
             >
               <Share2 size={16} />
             </Button>
@@ -171,7 +176,6 @@ export default function TopicDetail() {
         </div>
       </header>
 
-      {/* 본문 레이아웃 */}
       <section className="w-full max-w-[1200px] mx-auto px-6 -mt-16 pb-32">
         <article className="relative z-10 bg-[#121214] border border-white/5 rounded-[48px] py-10 md:p-10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)]">
           <div className="prose prose-invert prose-emerald max-w-none min-h-[300px] leading-[1.9] text-zinc-300 text-[17px]">
@@ -199,7 +203,6 @@ export default function TopicDetail() {
           </div>
         </article>
 
-        {/* 3. 댓글 영역 + 우측 Sticky 추천 토픽 */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mt-24 items-start">
           <div className="lg:col-span-8">
             <div className="flex items-center gap-4 mb-12 px-2">
@@ -211,10 +214,8 @@ export default function TopicDetail() {
             </div>
           </div>
 
-          {/* Sticky Sidebar: 오직 댓글 영역 우측에만 존재 */}
           <aside className="hidden lg:block lg:col-span-4 mt-20">
             <div className="sticky top-[calc(66px+40px)] space-y-8 pl-8 border-l border-white/5">
-              {/* Quick Actions Section */}
               <section>
                 <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-6 px-2">
                   Quick Actions
@@ -244,7 +245,6 @@ export default function TopicDetail() {
                 </div>
               </section>
 
-              {/* Trending Topics Section */}
               <section>
                 <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-purple-400 mb-6 px-2 flex items-center gap-2">
                   <TrendingUp size={12} />

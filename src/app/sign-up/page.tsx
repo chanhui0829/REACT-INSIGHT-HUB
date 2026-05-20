@@ -1,7 +1,9 @@
 // 회원가입 페이지
 
+'use client';
+
 import { useEffect, useState, useCallback } from 'react';
-import { NavLink, useNavigate } from 'react-router';
+import { useRouter } from 'next/navigation';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -43,8 +45,8 @@ const formSchema = z
     }
   });
 
-export default function SignUp() {
-  const navigate = useNavigate();
+export default function SignUpPage() {
+  const router = useRouter();
 
   // Auth Store 상태
   const user = useAuthStore((state) => state.user);
@@ -87,8 +89,8 @@ export default function SignUp() {
 
   // 인증 상태 감지
   useEffect(() => {
-    if (user) navigate('/');
-  }, [user, navigate]);
+    if (user) router.push('/');
+  }, [user, router]);
 
   // 회원가입 폼 제출 핸들러
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -114,7 +116,7 @@ export default function SignUp() {
 
       if (success) {
         toast.success('회원가입이 완료되었습니다! 로그인해주세요.');
-        navigate('/sign-in', { state: { email: values.email } });
+        router.push(`/sign-in?email=${values.email}`);
       } else {
         toast.error('회원가입에 실패했습니다.');
       }
@@ -324,7 +326,7 @@ export default function SignUp() {
                     type="button"
                     variant="outline"
                     size="icon"
-                    onClick={() => navigate(-1)}
+                    onClick={() => router.back()}
                     className="w-12 h-12 rounded-2xl border-white/10 hover:bg-slate-800 text-slate-400 transition-all shrink-0"
                   >
                     <ArrowLeft size={20} />
@@ -340,12 +342,12 @@ export default function SignUp() {
 
                 <div className="text-center text-[13px] text-slate-500">
                   이미 계정이 있으신가요?
-                  <NavLink
-                    to="/sign-in"
+                  <a
+                    href="/sign-in"
                     className="text-purple-400 hover:text-purple-300 font-bold ml-2 underline underline-offset-4 transition-colors"
                   >
                     로그인
-                  </NavLink>
+                  </a>
                 </div>
               </footer>
             </form>

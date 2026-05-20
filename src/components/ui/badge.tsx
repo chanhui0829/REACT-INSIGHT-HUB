@@ -1,3 +1,9 @@
+/**
+ * @file badge.tsx
+ * @description Badge 컴포넌트입니다.
+ * Radix UI의 Slot과 class-variance-authority를 사용합니다.
+ */
+
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";

@@ -1,3 +1,11 @@
+/**
+ * @file useTopic.ts
+ * @description 토픽 관련 훅입니다.
+ * TanStack Query를 사용하여 토픽 데이터를 관리합니다.
+ */
+
+'use client';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { QUERY_KEYS } from '@/constants/querykey.constant';
@@ -13,7 +21,6 @@ import type { Topic } from '@/types/topic.type';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { TopicLikeRow } from '@/services/realtimeService';
 
-// 타입
 type TopicLike = {
   user_id: string;
 };
@@ -26,7 +33,6 @@ type Filters = {
   endIndex: number;
 };
 
-// 목록 조회
 export const useTopicList = (filters: Filters, currentPage: number) => {
   return useQuery({
     queryKey: QUERY_KEYS.topics.list({
@@ -41,7 +47,6 @@ export const useTopicList = (filters: Filters, currentPage: number) => {
   });
 };
 
-// 다음 페이지 prefetch
 export const usePrefetchTopics = (filters: Filters, currentPage: number) => {
   const queryClient = useQueryClient();
 
@@ -63,7 +68,6 @@ export const usePrefetchTopics = (filters: Filters, currentPage: number) => {
   };
 };
 
-// 상세 조회
 export const useTopicDetail = (topicId: number) => {
   return useQuery<Topic | null>({
     queryKey: QUERY_KEYS.topics.detail(topicId),
@@ -72,7 +76,6 @@ export const useTopicDetail = (topicId: number) => {
   });
 };
 
-// 좋아요 목록
 export const useTopicLikes = (topicId: number) => {
   return useQuery<TopicLike[]>({
     queryKey: QUERY_KEYS.likes.list(topicId),
@@ -81,7 +84,6 @@ export const useTopicLikes = (topicId: number) => {
   });
 };
 
-// 조회수 증가
 export const useIncreaseViews = (topicId: number) => {
   const queryClient = useQueryClient();
 
@@ -122,7 +124,6 @@ export const useIncreaseViews = (topicId: number) => {
   });
 };
 
-// 좋아요 토글
 export const useToggleLike = (topicId: number, userId?: string) => {
   const queryClient = useQueryClient();
 
@@ -135,7 +136,6 @@ export const useToggleLike = (topicId: number, userId?: string) => {
       });
 
       const prevTopic = queryClient.getQueryData<Topic>(QUERY_KEYS.topics.detail(topicId));
-
       const prevLikes = queryClient.getQueryData<TopicLike[]>(QUERY_KEYS.likes.list(topicId));
 
       const isLiked = prevLikes?.some((l) => l.user_id === userId);
@@ -176,7 +176,6 @@ export const useToggleLike = (topicId: number, userId?: string) => {
   });
 };
 
-// 삭제
 export const useDeleteTopic = (topicId: number) => {
   return useMutation({
     mutationFn: () => deleteTopic(topicId),

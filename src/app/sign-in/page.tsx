@@ -1,7 +1,9 @@
 // 로그인 페이지
 
+'use client';
+
 import { useEffect, useCallback } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -36,9 +38,9 @@ const formSchema = z.object({
     .regex(passwordRegex, '영문, 숫자, 특수문자를 포함해야 합니다.'),
 });
 
-export default function SignIn() {
-  const navigate = useNavigate();
-  const location = useLocation();
+export default function SignInPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Auth Store 상태
   const user = useAuthStore((state) => state.user);
@@ -46,7 +48,7 @@ export default function SignIn() {
   const loading = useAuthStore((state) => state.loading);
 
   // 회원가입 페이지에서 전달받은 이메일
-  const prefillEmail = location.state?.email || '';
+  const prefillEmail = searchParams.get('email') || '';
 
   // React Hook Form 초기화
   const form = useForm<z.infer<typeof formSchema>>({
@@ -56,13 +58,16 @@ export default function SignIn() {
 
   // 인증 상태 감지
   useEffect(() => {
-    if (user) navigate('/');
-  }, [user, navigate]);
+    if (user) router.push('/');
+  }, [user, router]);
 
   // Google 소셜 로그인 핸들러
   const handleGoogleSignIn = useCallback(async () => {
-    const { error } = await signInWithGoogleService();
-    if (error) toast.error(error.message);
+    try {
+      await signInWithGoogleService();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
   }, []);
 
   // 이메일/비밀번호 로그인 핸들러
@@ -73,7 +78,7 @@ export default function SignIn() {
 
         if (success) {
           toast.success('환영합니다! 로그인이 성공하였습니다.');
-          navigate('/');
+          router.push('/');
         } else {
           toast.error('이메일 또는 비밀번호를 다시 확인해주세요.');
         }
@@ -82,7 +87,7 @@ export default function SignIn() {
         toast.error('로그인 처리 중 오류가 발생했습니다.');
       }
     },
-    [navigate, login]
+    [router, login]
   );
 
   return (
@@ -117,7 +122,7 @@ export default function SignIn() {
               onClick={handleGoogleSignIn}
               className="h-12 rounded-2xl border-white/10 bg-slate-950/50 hover:bg-slate-800 hover:text-white transition-all flex items-center gap-3 font-semibold"
             >
-              <img src="/assets/icons/icon-003.png" alt="Google" className="w-5 h-5 shrink-0" />
+              <img src="/assets/icons/google.png" alt="Google" className="w-5 h-5 shrink-0" />
               Google 계정으로 계속하기
             </Button>
 
@@ -189,12 +194,12 @@ export default function SignIn() {
 
                   <div className="text-center text-[13px] text-slate-500">
                     계정이 없으신가요?
-                    <NavLink
-                      to="/sign-up"
+                    <a
+                      href="/sign-up"
                       className="text-indigo-400 hover:text-indigo-300 font-bold ml-2 underline underline-offset-4 transition-colors"
                     >
                       회원가입
-                    </NavLink>
+                    </a>
                   </div>
                 </div>
               </form>

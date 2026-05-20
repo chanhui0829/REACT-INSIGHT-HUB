@@ -1,10 +1,15 @@
-/*
- * @file CaseStudyPage.tsx
- * @description Insight Hub 프로젝트 케이스 스터디.
+/**
+ * @file page.tsx
+ * @description 케이스 스터디 페이지입니다.
+ * 프로젝트에 대한 상세 정보를 보여줍니다.
  */
 
+'use client';
+
+import { motion } from 'framer-motion';
+import type { Variants } from 'framer-motion';
+
 import { useMemo } from 'react';
-import { motion, type Variants } from 'framer-motion';
 import {
   ShieldAlert,
   Zap,
@@ -35,7 +40,6 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function CaseStudyPage() {
-  // 기술 스택 (한 줄 배치를 위해 최적화)
   const techStack = useMemo(
     () => [
       { icon: <Code2 size={20} />, name: 'React' },

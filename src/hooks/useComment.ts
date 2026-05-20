@@ -1,3 +1,11 @@
+/**
+ * @file useComment.ts
+ * @description 댓글 관련 훅입니다.
+ * TanStack Query를 사용하여 댓글 데이터를 관리합니다.
+ */
+
+'use client';
+
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { QUERY_KEYS } from '@/constants/querykey.constant';

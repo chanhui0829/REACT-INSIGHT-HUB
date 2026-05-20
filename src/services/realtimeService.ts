@@ -1,5 +1,11 @@
+/**
+ * @file realtimeService.ts
+ * @description Supabase Realtime 서비스입니다.
+ * 토픽의 댓글과 좋아요 실시간 업데이트를 구독합니다.
+ */
+
 import type { RealtimePostgresChangesPayload, RealtimeChannel } from '@supabase/supabase-js';
-import supabase from '@/lib/supabase';
+import { createClient } from '@/lib/supabase';
 
 export type TopicLikeRow = {
   topic_id: number;
@@ -22,6 +28,7 @@ export const subscribeTopicRealtime = (
   topicId: number,
   handlers: TopicRealtimeHandlers
 ): RealtimeChannel => {
+  const supabase = createClient();
   const channel = supabase.channel(`topic:${topicId}:realtime`);
 
   channel

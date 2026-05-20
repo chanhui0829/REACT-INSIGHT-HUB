@@ -1,11 +1,11 @@
 @import 'tailwindcss';
-@import 'tw-animate-css';
 
-@theme inline {
+@theme {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -24,11 +24,13 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -112,7 +114,7 @@
   * {
     border-color: var(--border);
     outline-color: var(--ring);
-
+    
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -150,16 +152,16 @@
 }
 
 .bn-editor {
-  color: white !important; /* 기본 텍스트 색상 */
-  background-color: transparent !important; /* 배경 그대로 */
+  color: white !important;
+  background-color: transparent !important;
 }
 
 .bn-editor *::selection {
-  background-color: rgba(52, 211, 153, 0.4); /* 선택 영역 강조색 (emerald tone) */
+  background-color: rgba(52, 211, 153, 0.4);
 }
 
 .bn-placeholder {
-  color: #71717a !important; /* placeholder 색상 (text-zinc-500 비슷하게) */
+  color: #71717a !important;
 }
 
 .scrollbar-hide {

@@ -1,3 +1,11 @@
+/**
+ * @file useCreateTopic.ts
+ * @description 토픽 생성/수정 훅입니다.
+ * TanStack Query를 사용하여 토픽 저장 및 발행을 관리합니다.
+ */
+
+'use client';
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/constants/querykey.constant';
 import { insertTopic, updateTopic, uploadThumbnail } from '@/services/topicService';
@@ -7,7 +15,7 @@ import { TOPIC_STATUS } from '@/types/topic.type';
 type BuildPayload = (
   status: Topic['status'],
   thumbnailUrl: string | null
-) => Omit<Topic, 'id' | 'created_at' | 'author' | 'views' | 'likes'>;
+) => Omit<Topic, 'id' | 'created_at' | 'author' | 'views' | 'likes' | 'updated_at'>;
 
 type Payload = {
   id?: number | string;
@@ -26,15 +34,11 @@ export const useSaveTopic = () => {
       const payload = buildPayload(TOPIC_STATUS.TEMP, thumbnailUrl);
 
       if (!id) {
-        // 새 글 저장
         const result = await insertTopic(userId, payload);
-        // Supabase insert는 보통 배열로 데이터를 주거나 id를 포함한 객체를 줍니다.
-        // 만약 result가 숫자라면 객체로 감싸서 반환하세요.
         return typeof result === 'object' ? result : { id: result };
       } else {
-        // 기존 글 수정
         await updateTopic(id as string, payload);
-        return { id }; // 이미 id를 알고 있으니 그대로 반환
+        return { id };
       }
     },
     onSuccess: (_, variables) => {
@@ -44,7 +48,6 @@ export const useSaveTopic = () => {
   });
 };
 
-// 🔹 발행
 export const usePublishTopic = () => {
   const queryClient = useQueryClient();
 
@@ -58,13 +61,22 @@ export const usePublishTopic = () => {
       } else {
         await updateTopic(id as string, payload);
       }
+
+      // 발행 후 서버 캐시 즉시 무효화
+      await fetch('/api/revalidate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_REVALIDATION_SECRET}`,
+        },
+        body: JSON.stringify({ tag: 'posts' }),
+      });
     },
 
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.drafts(variables.userId),
       });
-
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.topics.all,
       });

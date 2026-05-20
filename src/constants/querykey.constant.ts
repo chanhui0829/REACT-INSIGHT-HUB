@@ -1,34 +1,24 @@
-type TopicListFilters = {
-  category: string;
-  searchQuery: string;
-  sortOption: string;
-  currentPage: number;
-};
+/**
+ * @file querykey.constant.ts
+ * @description TanStack Query의 쿼리 키를 관리하는 상수입니다.
+ */
 
 export const QUERY_KEYS = {
   topics: {
     all: ['topics'] as const,
-
-    list: (filters: TopicListFilters) => ['topics', 'list', filters] as const,
-
+    list: (filters: { category: string; searchQuery: string; sortOption: string; currentPage: number }) => 
+      ['topics', 'list', filters] as const,
     detail: (id: number) => ['topics', 'detail', id] as const,
   },
-
   likes: {
-    list: (topicId: number) => ['topics', 'likes', topicId] as const,
+    list: (topicId: number) => ['likes', topicId] as const,
   },
-
+  drafts: (userId: string | undefined) => ['drafts', userId] as const,
   comments: {
-    list: (topicId: number) => ['topics', 'comments', topicId] as const,
-
-    count: (topicId: number) => ['topics', 'comments', 'count', topicId] as const,
+    list: (topicId: number) => ['comments', topicId] as const,
+    count: (topicId: number) => ['comments', 'count', topicId] as const,
   },
-
-  drafts: (userId: string | undefined) => ['topics', 'drafts', userId] as const,
-
   user: {
     me: ['user', 'me'] as const,
-
-    profile: (id: string) => ['user', 'profile', id] as const,
   },
-};
+} as const;

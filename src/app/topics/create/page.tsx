@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -31,7 +31,6 @@ import {
   Label,
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -56,10 +55,11 @@ const parseEditorContent = (raw: string | null | undefined): Block[] => {
   }
 };
 
-export default function CreateTopic() {
+export default function CreateTopicPage() {
   const user = useAuthStore((state) => state.user);
-  const navigate = useNavigate();
-  const { id } = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id') || undefined;
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState<Block[]>([]);
@@ -90,6 +90,7 @@ export default function CreateTopic() {
       category,
       thumbnail: thumbnailUrl,
       status,
+      created_at: new Date().toISOString(),
     }),
     [title, content, category]
   );
@@ -106,9 +107,9 @@ export default function CreateTopic() {
   const requireAuth = useCallback(() => {
     if (user) return user.id;
     toast.warning('로그인 후 작성/저장이 가능합니다.');
-    navigate('/sign-in');
+    router.push('/sign-in');
     return null;
-  }, [user, navigate]);
+  }, [user, router]);
 
   const handleSave = useCallback(async () => {
     if (!title && !content.length && !category && !thumbnail) {
@@ -120,7 +121,6 @@ export default function CreateTopic() {
     if (!userId) return;
 
     try {
-      // 1. 결과값 뒤에 'as { id: number | string }'을 붙여서 강제로 타입을 지정합니다.
       const savedTopic = (await saveMutation.mutateAsync({
         id,
         userId,
@@ -134,14 +134,15 @@ export default function CreateTopic() {
         const newId =
           savedTopic?.id || (Array.isArray(savedTopic) ? savedTopic[0]?.id : savedTopic);
         if (newId) {
-          navigate(`/topics/create/${newId}`, { replace: true });
+          router.push(`/topics/create?id=${newId}`, { scroll: false });
         }
       }
     } catch (err) {
       console.error(err);
       toast.error('저장 중 오류가 발생했습니다.');
     }
-  }, [title, content, category, thumbnail, id, buildPayload, saveMutation, navigate, requireAuth]);
+  }, [title, content, category, thumbnail, id, buildPayload, saveMutation, router, requireAuth]);
+
   const handlePublish = useCallback(async () => {
     if (!title || !content.length || !category || !thumbnail) {
       toast.warning('필수 항목을 모두 입력해주세요.');
@@ -154,22 +155,22 @@ export default function CreateTopic() {
     try {
       await publishMutation.mutateAsync({ id, userId, buildPayload, thumbnail });
       toast.success('토픽이 발행되었습니다!');
-      navigate('/');
+      router.push('/');
     } catch (err) {
       console.error(err);
       toast.error('발행 중 오류가 발생했습니다.');
     }
-  }, [title, content, category, thumbnail, id, navigate, publishMutation, buildPayload, requireAuth]);
+  }, [title, content, category, thumbnail, id, router, publishMutation, buildPayload, requireAuth]);
 
   return (
     <main className="relative w-full max-w-7xl mx-auto pt-24 pb-32 px-6">
       {/* 🚀 Sticky Action Bar: 성능 최적화를 위해 blur를 제거하고 불투명도 조정 */}
       <div className="fixed left-1/2 bottom-10 -translate-x-1/2 z-50 transform-gpu will-change-transform ">
-        <div className="flex items-center gap-3 p-2.5 rounded-full bg-slate-950/90 backdrop-blur-3xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
+        <div className="flex items-center gap-3 p-2.5 rounded-full bg-slate-950/90 backdrop-blur-md border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={() => router.back()}
             className="rounded-full w-11 h-11 hover:bg-white/5 text-slate-400"
           >
             <ArrowLeft size={20} />
@@ -182,16 +183,17 @@ export default function CreateTopic() {
             <Button
               variant="secondary"
               onClick={handleSave}
-              disabled={saveMutation.isPending || !user}
+              disabled={saveMutation.isPending}
               className="
-                relative z-10 
-                rounded-full h-11 px-5 
-                bg-slate-900 
-                border-2 border-slate-800 
+                relative z-10
+                rounded-full h-10 px-5
+                bg-slate-900
+                border-2 border-slate-800
                 hover:border-slate-700 hover:bg-slate-800
-                text-slate-300 hover:text-white 
+                text-slate-300 hover:text-white
                 shadow-xl transition-all active:scale-95
                 flex gap-2 items-center
+                disabled:opacity-50 disabled:cursor-not-allowed
               "
             >
               <NotebookPen className="w-4 h-4" />
@@ -201,8 +203,8 @@ export default function CreateTopic() {
 
           <Button
             onClick={handlePublish}
-            disabled={publishMutation.isPending || !user}
-            className="rounded-full h-10 px-8 bg-indigo-500 hover:bg-indigo-400 text-white flex gap-2 transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)]"
+            disabled={publishMutation.isPending}
+            className="rounded-full z-10 h-10 px-5 bg-indigo-500 hover:bg-indigo-400 text-white flex gap-2 transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <BookOpenCheck size={18} />
             토픽 발행
@@ -272,13 +274,11 @@ export default function CreateTopic() {
                   <SelectValue placeholder="주제를 선택하세요" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-950 border-white/10 text-slate-300">
-                  <SelectGroup>
                     {TOPIC_CATEGORY.map((item) => (
                       <SelectItem key={item.id} value={item.category} className="cursor-pointer hover:bg-indigo-500/10 hover:text-indigo-400">
                         {item.label}
                       </SelectItem>
                     ))}
-                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>

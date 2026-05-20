@@ -1,3 +1,9 @@
+/**
+ * @file separator.tsx
+ * @description Separator 컴포넌트입니다.
+ * Radix UI의 Separator를 기반으로 합니다.
+ */
+
 import * as React from "react"
 import * as SeparatorPrimitive from "@radix-ui/react-separator"
 

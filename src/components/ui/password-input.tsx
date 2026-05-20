@@ -1,3 +1,9 @@
+/**
+ * @file password-input.tsx
+ * @description PasswordInput 컴포넌트입니다.
+ * 비밀번호 표시/숨기기 토글 기능을 제공합니다.
+ */
+
 import * as React from "react";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 
@@ -37,7 +43,6 @@ const PasswordInput = React.forwardRef<HTMLInputElement, InputProps>(
           </span>
         </Button>
 
-        {/* hides browsers password toggles */}
         <style>{`
 					.hide-password-toggle::-ms-reveal,
 					.hide-password-toggle::-ms-clear {

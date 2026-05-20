@@ -1,3 +1,8 @@
+/**
+ * @file comment.tsx
+ * @description 댓글 박스 컴포넌트입니다.
+ */
+
 'use client';
 
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
@@ -13,7 +18,6 @@ import { getUserNicknames } from '@/services/useService';
 
 import { useComments, useCommentsCount, useAddComment, useDeleteComment } from '@/hooks/useComment';
 
-// 날짜 포맷팅 라이브러리
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ko';
@@ -30,13 +34,12 @@ export default function CommentBox({ topicId }: CommentBoxProps) {
   const newCommentRef = useRef<HTMLTextAreaElement | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ---------------------------------------------------------
-  // 1. 데이터 페칭 (사용자 정보, 댓글 목록, 총 개수)
-  // ---------------------------------------------------------
   const { data: user } = useQuery({
     queryKey: QUERY_KEYS.user.me,
     queryFn: async () => {
-      const { data } = await import('@/lib/supabase').then((m) => m.default.auth.getUser());
+      const { createClientComponentClient } = await import('@/lib/supabase');
+      const supabase = createClientComponentClient();
+      const { data } = await supabase.auth.getUser();
       return data.user;
     },
     staleTime: Infinity,
@@ -50,15 +53,12 @@ export default function CommentBox({ topicId }: CommentBoxProps) {
   const authorIds = useMemo(() => comments.map((c) => c.user_id).filter(Boolean) as string[], [comments]);
 
   const { data: nicknameMap = {} } = useQuery({
-    queryKey: ['user', 'nicknames', authorIds.sort().join(',')],
+    queryKey: ['user', 'nicknames', [...authorIds].sort().join(',')],
     queryFn: () => getUserNicknames(authorIds),
     enabled: authorIds.length > 0,
     staleTime: 1000 * 60 * 30,
   });
 
-  // ---------------------------------------------------------
-  // 2. 비즈니스 로직 (등록, 삭제)
-  // ---------------------------------------------------------
   const addCommentMutation = useAddComment(topicId);
   const deleteCommentMutation = useDeleteComment(topicId);
 
@@ -90,9 +90,6 @@ export default function CommentBox({ topicId }: CommentBoxProps) {
     }
   };
 
-  // ---------------------------------------------------------
-  // 3. 무한 스크롤 구현 (Intersection Observer)
-  // ---------------------------------------------------------
   const observerCallback = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       const entry = entries[0];
@@ -112,7 +109,6 @@ export default function CommentBox({ topicId }: CommentBoxProps) {
 
   return (
     <section className="w-full max-w-4xl mx-auto space-y-8 pb-20">
-      {/* 섹션 헤더 */}
       <div className="flex items-center gap-3 px-1">
         <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
           <MessageSquareMore className="size-5 text-indigo-400" />
@@ -125,7 +121,6 @@ export default function CommentBox({ topicId }: CommentBoxProps) {
         </h3>
       </div>
 
-      {/* 댓글 입력창 - 더 컴팩트하고 미니멀한 디자인 */}
       <div className="relative bg-slate-900/40 border border-white/10 rounded-2xl p-4 shadow-lg transition-all focus-within:border-indigo-500/30 focus-within:ring-1 focus-within:ring-indigo-500/10">
         <Textarea
           ref={newCommentRef}
@@ -151,7 +146,6 @@ export default function CommentBox({ topicId }: CommentBoxProps) {
 
       <Separator className="bg-white/5" />
 
-      {/* 댓글 리스트 영역 - 더 컴팩트한 카드 디자인 */}
       <div className="space-y-4">
         {status === 'pending' ? (
           <div className="flex justify-center py-16">
@@ -216,7 +210,6 @@ export default function CommentBox({ topicId }: CommentBoxProps) {
         )}
       </div>
 
-      {/* 무한 스크롤 트리거 */}
       {hasNextPage && (
         <div ref={loaderRef} className="flex justify-center pt-4">
           <Loader2 className="size-5 text-indigo-500/30 animate-spin" />

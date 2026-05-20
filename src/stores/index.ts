@@ -1,19 +1,25 @@
+/**
+ * @file index.ts
+ * @description Zustand 스토어입니다.
+ * 인증 상태를 관리합니다.
+ */
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 import {
-  signInService,
-  signUpService,
-  signOutService,
+  signInWithEmail,
+  signUpWithEmail,
+  signOut,
   updateUserAgreement,
 } from '@/services/authService';
-import supabase from '@/lib/supabase';
+import { createClient } from '@/lib/supabase';
 
 export interface User {
   id: string;
   email: string;
   role: string;
-  nickname?: string;
+  nickname: string;
 }
 
 interface AuthStore {
@@ -47,7 +53,7 @@ export const useAuthStore = create<AuthStore>()(
 
       reset: async () => {
         try {
-          await signOutService();
+          await signOut();
         } catch {
           console.warn('signOut 실패');
         }
@@ -57,73 +63,78 @@ export const useAuthStore = create<AuthStore>()(
       login: async (email, password) => {
         set({ loading: true, error: null });
 
-        const { data, error } = await signInService(email, password);
+        try {
+          const result = await signInWithEmail(email, password);
 
-        if (error || !data.user) {
-          set({ error: error?.message || '로그인 실패', loading: false });
-          return false;
-        }
-
-        const { data: userData } = await supabase
-          .from('user')
-          .select('nickname')
-          .eq('id', data.user.id)
-          .single();
-
-        set({
-          user: {
-            id: data.user.id,
-            email: data.user.email ?? '',
-            role: 'user',
-            nickname: userData?.nickname,
-          },
-          loading: false,
-        });
-
-        return true;
-      },
-
-      signUp: async (email, password, serviceAgreed, privacyAgreed, marketingAgreed, nickname) => {
-        set({ loading: true, error: null });
-
-        const { data, error } = await signUpService(email, password);
-
-        if (error || !data.user) {
-          set({ error: error?.message || '회원가입 실패', loading: false });
-          return false;
-        }
-
-        const { error: updateError } = await updateUserAgreement(
-          data.user.id,
-          serviceAgreed,
-          privacyAgreed,
-          marketingAgreed
-        );
-
-        if (updateError) {
-          set({ loading: false });
-          return false;
-        }
-
-        if (nickname) {
-          const { error: nicknameError } = await supabase
-            .from('user')
-            .update({ nickname })
-            .eq('id', data.user.id);
-
-          if (nicknameError) {
-            console.warn('닉네임 저장 실패:', nicknameError);
+          if (!result.user) {
+            set({ error: '로그인 실패', loading: false });
+            return false;
           }
+
+          const supabase = createClient();
+          const { data: userData } = await supabase
+            .from('user')
+            .select('nickname')
+            .eq('id', result.user.id)
+            .single();
+
+          set({
+            user: {
+              id: result.user.id,
+              email: result.user.email ?? '',
+              role: 'user',
+              nickname: userData?.nickname ?? '',
+            },
+            loading: false,
+          });
+
+          return true;
+        } catch (error: any) {
+          set({ error: error.message || '로그인 실패', loading: false });
+          return false;
         }
-
-        await signOutService();
-
-        set({ loading: false });
-        return true;
       },
+
+   signUp: async (email, password, serviceAgreed, privacyAgreed, marketingAgreed, nickname) => {
+  set({ loading: true, error: null });
+
+  try {
+    const result = await signUpWithEmail(email, password, nickname);
+
+    if (!result.user) {
+      set({ error: '회원가입 실패', loading: false });
+      return false;
+    }
+
+    const supabase = createClient();
+
+    // security definer 함수로 RLS 우회
+    const { error: rpcError } = await supabase.rpc('update_user_on_signup', {
+      user_id: result.user.id,
+      user_nickname: nickname ?? '',
+      user_service_agreed: serviceAgreed,
+      user_privacy_agreed: privacyAgreed,
+      user_marketing_agreed: marketingAgreed,
+    });
+
+    if (rpcError) {
+      console.error('회원가입 정보 저장 실패:', rpcError);
+      set({ loading: false });
+      return false;
+    }
+
+    await signOut();
+
+    set({ loading: false });
+    return true;
+  } catch (error: any) {
+    set({ error: error.message || '회원가입 실패', loading: false });
+    return false;
+  }
+},
 
       logout: async () => {
-        await signOutService();
+        await signOut();
         set({ user: null });
       },
     }),

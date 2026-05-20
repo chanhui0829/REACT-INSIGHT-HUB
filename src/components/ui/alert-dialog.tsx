@@ -1,3 +1,9 @@
+/**
+ * @file alert-dialog.tsx
+ * @description AlertDialog 컴포넌트입니다.
+ * Radix UI의 AlertDialog를 기반으로 합니다.
+ */
+
 import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 

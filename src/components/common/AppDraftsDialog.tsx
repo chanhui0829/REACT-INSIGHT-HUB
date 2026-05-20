@@ -1,8 +1,13 @@
-// 임시 저장 보관함 다이얼로그
+/**
+ * @file AppDraftsDialog.tsx
+ * @description 임시 저장 보관함 다이얼로그 컴포넌트입니다.
+ */
+
+'use client';
 
 import type React from 'react';
 import { useCallback, useMemo, useState, memo } from 'react';
-import { useNavigate } from 'react-router';
+import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ko';
@@ -28,11 +33,9 @@ import { DialogClose } from '@radix-ui/react-dialog';
 import { AppDeleteDialog } from './AppDeleteDialog';
 import { Loader2, Inbox, Clock } from 'lucide-react';
 
-// 상대 시간 플러그인 적용
 dayjs.extend(relativeTime);
 dayjs.locale('ko');
 
-// 타입 정의
 interface Draft {
   id: number;
   title: string;
@@ -46,7 +49,6 @@ interface DraftItemProps {
   onDelete: (id: number) => void;
 }
 
-// 개별 리스트 아이템
 const DraftItem = memo(({ draft, index, onNavigate, onDelete }: DraftItemProps) => {
   return (
     <div
@@ -93,9 +95,8 @@ const DraftItem = memo(({ draft, index, onNavigate, onDelete }: DraftItemProps) 
 
 DraftItem.displayName = 'DraftItem';
 
-// 메인 다이얼로그 컴포넌트
 export function AppDraftsDialog({ children }: { children: React.ReactNode }) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const [open, setOpen] = useState(false);
@@ -109,9 +110,9 @@ export function AppDraftsDialog({ children }: { children: React.ReactNode }) {
   const handleNavigate = useCallback(
     (id: number) => {
       setOpen(false);
-      navigate(`/topics/create/${id}`);
+      router.push(`/topics/create/${id}`);
     },
-    [navigate]
+    [router]
   );
 
   const handleDelete = useCallback(
@@ -126,7 +127,6 @@ export function AppDraftsDialog({ children }: { children: React.ReactNode }) {
     [queryClient, user?.id]
   );
 
-  // 리스트 렌더링 최적화
   const renderedDrafts = useMemo(() => {
     if (isLoading) {
       return (

@@ -1,14 +1,21 @@
+/**
+ * @file page.tsx
+ * @description OAuth 콜백 페이지입니다.
+ * 소셜 로그인 후 닉네임 설정 및 약관 동의를 처리합니다.
+ */
+
+'use client';
+
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
-import supabase from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import { createClientComponentClient } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Input } from "@/components/ui";
 import { Button } from "@/components/ui";
 import { Checkbox } from "@/components/ui";
-import { checkNickname, updateUserAgreement } from "@/services/authService";
 
 export default function AuthCallback() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [nickname, setNickname] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
@@ -21,6 +28,7 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      const supabase = createClientComponentClient();
       const {
         data: { session },
         error: sessionError,
@@ -29,7 +37,7 @@ export default function AuthCallback() {
       if (sessionError || !session) {
         console.error("세션 처리 오류", sessionError);
         toast.error("로그인 처리 중 오류가 발생했습니다.");
-        navigate("/sign-in");
+        router.push("/sign-in");
         return;
       }
 
@@ -45,7 +53,7 @@ export default function AuthCallback() {
       if (userError || !userData) {
         console.error("사용자 정보 조회 오류", userError);
         toast.error("사용자 정보 조회 중 오류가 발생했습니다.");
-        navigate("/sign-in");
+        router.push("/sign-in");
         return;
       }
 
@@ -54,12 +62,12 @@ export default function AuthCallback() {
         setLoading(false);
       } else {
         toast.success("로그인을 성공하였습니다.");
-        navigate("/");
+        router.push("/");
       }
     };
 
     handleAuthCallback();
-  }, [navigate]);
+  }, [router]);
 
   const handleNicknameSubmit = async () => {
     if (!nickname || nickname.length < 2 || nickname.length > 20) {
@@ -74,11 +82,18 @@ export default function AuthCallback() {
 
     if (!userId) return;
 
+    const supabase = createClientComponentClient();
     setIsCheckingNickname(true);
-    const isDuplicate = await checkNickname(nickname);
+
+    const { data: existing } = await supabase
+      .from("user")
+      .select("id")
+      .eq("nickname", nickname)
+      .single();
+
     setIsCheckingNickname(false);
 
-    if (isDuplicate) {
+    if (existing) {
       setNicknameError("이미 사용 중인 닉네임입니다.");
       return;
     }
@@ -93,12 +108,14 @@ export default function AuthCallback() {
       return;
     }
 
-    const { error: agreementError } = await updateUserAgreement(
-      userId,
-      serviceAgreed,
-      privacyAgreed,
-      marketingAgreed
-    );
+    const { error: agreementError } = await supabase
+      .from("user")
+      .update({
+        service_agreed: serviceAgreed,
+        privacy_agreed: privacyAgreed,
+        marketing_agreed: marketingAgreed,
+      })
+      .eq("id", userId);
 
     if (agreementError) {
       toast.error("약관 동의 저장에 실패했습니다.");
@@ -106,7 +123,7 @@ export default function AuthCallback() {
     }
 
     toast.success("로그인을 성공하였습니다.");
-    navigate("/");
+    router.push("/");
   };
 
   if (loading) {

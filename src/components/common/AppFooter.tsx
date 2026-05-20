@@ -1,22 +1,15 @@
 /**
  * @file AppFooter.tsx
-
+ * @description 전역 푸터 컴포넌트입니다.
  * 시각적 위계와 브랜드 아이덴티티 강조를 위해 비대칭 레이아웃을 적용했습니다.
  */
 
 import { useMemo } from 'react';
-import { NavLink } from 'react-router-dom';
+import Link from 'next/link';
 import { Github, Youtube, Mail, ExternalLink } from 'lucide-react';
-import { Button } from '../ui';
+import { Button } from '@/components/ui';
 
-// —————————————————————————————————————————————————————————————————————————————
-// ✨ Constants & Data Structures
-// —————————————————————————————————————————————————————————————————————————————
-
-/**
- * 푸터 링크 그룹 데이터
- * 포트폴리오의 전문성을 위해 구체적인 서비스 메뉴로 구성했습니다.
- */
+// 푸터 링크 그룹 데이터
 const FOOTER_NAV_DATA = [
   {
     title: 'Platform',
@@ -43,14 +36,7 @@ const FOOTER_NAV_DATA = [
   },
 ];
 
-// —————————————————————————————————————————————————————————————————————————————
-// 🧩 Main Component
-// —————————————————————————————————————————————————————————————————————————————
-
 export function AppFooter() {
-  /**
-   * 중복 렌더링 방지를 위해 메모이제이션 적용
-   */
   const navSections = useMemo(() => FOOTER_NAV_DATA, []);
 
   return (
@@ -60,7 +46,7 @@ export function AppFooter() {
 
       <div className="max-w-[1400px] mx-auto px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-8 mb-12">
-          {/* 1️⃣ Brand Section: 큼직한 로고와 슬로건 */}
+          {/* Brand Section */}
           <section className="lg:col-span-5 space-y-8">
             <div className="flex items-center gap-3">
               <span className="text-2xl font-extrabold tracking-tight text-white">
@@ -75,7 +61,7 @@ export function AppFooter() {
 
             {/* Social & Contact */}
             <div className="flex items-center gap-3 pt-4">
-              <NavLink to="https://github.com/chanhui0829/REACT-CHANWEB" target="_blank">
+              <Link href="https://github.com/chanhui0829/REACT-CHANWEB" target="_blank">
                 <Button
                   variant="outline"
                   size="icon"
@@ -83,7 +69,7 @@ export function AppFooter() {
                 >
                   <Github size={20} className="text-slate-400 group-hover:text-indigo-400" />
                 </Button>
-              </NavLink>
+              </Link>
               <Button
                 variant="outline"
                 size="icon"
@@ -101,7 +87,7 @@ export function AppFooter() {
             </div>
           </section>
 
-          {/* 2️⃣ Navigation Grid: map을 활용한 효율적 렌더링 */}
+          {/* Navigation Grid */}
           <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-12">
             {navSections.map((section) => (
               <nav key={section.title} className="space-y-6">
@@ -111,8 +97,8 @@ export function AppFooter() {
                 <ul className="space-y-4">
                   {section.links.map((link) => (
                     <li key={link.label}>
-                      <NavLink
-                        to={link.to}
+                      <Link
+                        href={link.to}
                         className="group flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-white transition-colors"
                       >
                         {link.label}
@@ -120,7 +106,7 @@ export function AppFooter() {
                           size={12}
                           className="opacity-0 group-hover:opacity-100 -translate-y-1 transition-all text-indigo-400"
                         />
-                      </NavLink>
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -129,7 +115,7 @@ export function AppFooter() {
           </div>
         </div>
 
-        {/* 3️⃣ Bottom Copyright: 마무리는 깔끔하게 */}
+        {/* Bottom Copyright */}
         <div className="flex flex-col md:flex-row justify-between items-center pt-12 border-t border-white/5 gap-6 text-xs font-black uppercase tracking-widest text-slate-500">
           <p>© 2026 Insight Hub. Build by chanhui.</p>
           <div className="flex gap-8">
