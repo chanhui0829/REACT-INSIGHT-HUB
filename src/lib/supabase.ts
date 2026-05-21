@@ -1,27 +1,37 @@
 /**
  * @file supabase.ts
- * @description Supabase 클라이언트 설정 파일입니다.
- * 서버 사이드와 클라이언트 사이드에서 각각 사용할 수 있도록
- * createClient와 createBrowserClient를 분리하여 제공합니다.
  */
 
-import { createClient as createServerClient } from '@supabase/supabase-js';
-import { createBrowserClient } from '@supabase/ssr';
+import { createBrowserClient, createServerClient } from '@supabase/ssr';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-// 환경 변수
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// 서버 사이드용 Supabase 클라이언트 인스턴스 (Server Component, Route Handler 전용)
-export const supabase = createServerClient(supabaseUrl, supabaseAnonKey);
+// 1. 서버 전용 (SSR 환경에서 쿠키를 읽어야 할 때 사용)
+export const createServerSupabaseClient = async () => {
+  const { cookies } = await import('next/headers');
+  const cookieStore = await cookies();
 
-// 클라이언트 사이드용 Supabase 클라이언트 생성 함수 (Client Component 전용)
-export const createClient = () =>
-  createBrowserClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      flowType: 'pkce',
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get: (name) => cookieStore.get(name)?.value,
+      set: (name, value, options) => {
+        try {
+          cookieStore.set({ name, value, ...options });
+        } catch {}
+      },
+      remove: (name, options) => {
+        try {
+          cookieStore.set({ name, value: '', ...options });
+        } catch {}
+      },
     },
   });
+};
 
-// 클라이언트 사이드용 Supabase 클라이언트 (호환성 유지)
+// 2. 캐시 전용 (unstable_cache 등에서 사용, 쿠키 의존성 없음)
+export const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey);
+
+// 3. 클라이언트 전용 (Client Component에서 사용)
 export const createClientComponentClient = () => createBrowserClient(supabaseUrl, supabaseAnonKey);

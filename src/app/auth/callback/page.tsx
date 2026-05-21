@@ -12,7 +12,6 @@ import { createClientComponentClient } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Input, Button, Checkbox } from '@/components/ui';
 import { useAuthStore } from '@/stores';
-import { User } from '@/types/auth.type';
 
 export default function AuthCallback() {
   const router = useRouter();

@@ -1,22 +1,18 @@
 /**
  * @file topicService.ts
- * @description 토픽(블로그 포스트) 관련 데이터 처리 서비스입니다.
- * Supabase를 통한 CRUD 작업과 캐싱 태그 기반의 데이터 가져오기를 제공합니다.
  */
 
-import { supabase } from '@/lib/supabase';
+import { supabase, createClientComponentClient } from '@/lib/supabase';
 import { nanoid } from 'nanoid';
 import type { Topic } from '@/types/topic.type';
 import { TOPIC_STATUS } from '@/types/topic.type';
 import { unstable_cache } from 'next/cache';
 
-// 타입 정의
 export type TopicInsertWithoutAuthor = Omit<
   Topic,
   'id' | 'created_at' | 'author' | 'views' | 'likes'
 >;
 
-// 목록 조회 - 캐싱 태그 기반
 type FetchTopicsParams = {
   category: string;
   searchQuery: string;
@@ -25,6 +21,7 @@ type FetchTopicsParams = {
   endIndex: number;
 };
 
+// unstable_cache 안에서 사용 — cookies 없는 supabase
 export const fetchTopics = async (filters: FetchTopicsParams) => {
   const { category, searchQuery, sortOption, startIndex, endIndex } = filters;
 
@@ -33,13 +30,8 @@ export const fetchTopics = async (filters: FetchTopicsParams) => {
     .select('*', { count: 'exact' })
     .eq('status', TOPIC_STATUS.PUBLISH);
 
-  if (category !== 'all') {
-    query = query.eq('category', category);
-  }
-
-  if (searchQuery) {
-    query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
-  }
+  if (category !== 'all') query = query.eq('category', category);
+  if (searchQuery) query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
 
   const orderBy =
     sortOption === 'likes' ? 'likes' : sortOption === 'views' ? 'views' : 'created_at';
@@ -49,14 +41,9 @@ export const fetchTopics = async (filters: FetchTopicsParams) => {
     .range(startIndex, endIndex);
 
   if (error) throw error;
-
-  return {
-    topics: data ?? [],
-    total: count ?? 0,
-  };
+  return { topics: data ?? [], total: count ?? 0 };
 };
 
-// 캐싱 태그 기반 토픽 목록 가져오기
 export const getCachedTopics = (filters: FetchTopicsParams) =>
   unstable_cache(
     async () => fetchTopics(filters),
@@ -68,127 +55,97 @@ export const getCachedTopics = (filters: FetchTopicsParams) =>
       String(filters.startIndex),
       String(filters.endIndex),
     ],
-    {
-      tags: ['posts'],
-      revalidate: 3600,
-    }
+    { tags: ['posts'], revalidate: 3600 }
   )();
 
-// 단일 조회 - 캐싱 태그 기반
+// 단일 조회 — cookies 없는 supabase (캐시용)
 export const fetchTopicById = async (id?: string): Promise<Topic | null> => {
   if (!id) return null;
-
   const { data, error } = await supabase.from('topic').select('*').eq('id', id).single();
-
   if (error) throw error;
   return data;
 };
 
-// 캐싱 태그 기반 토픽 상세 가져오기
-export const getCachedTopicById = unstable_cache(
-  async (id: string) => {
-    return fetchTopicById(id);
-  },
-  ['topic-detail'],
-  {
-    tags: ['posts'],
-    revalidate: 3600,
-  }
-);
-
-// 썸네일 업로드
+// 썸네일 업로드 — 클라이언트에서 호출
 export const uploadThumbnail = async (file: File | string | null) => {
   if (!file) return null;
+  const client = createClientComponentClient();
 
   if (file instanceof File) {
     const ext = file.name.split('.').pop();
     const fileName = `${nanoid()}.${ext}`;
     const filePath = `topics/${fileName}`;
-
-    const { error } = await supabase.storage.from('files').upload(filePath, file);
-
+    const { error } = await client.storage.from('files').upload(filePath, file);
     if (error) throw error;
-
-    const { data } = supabase.storage.from('files').getPublicUrl(filePath);
+    const { data } = client.storage.from('files').getPublicUrl(filePath);
     return data.publicUrl;
   }
-
   return typeof file === 'string' ? file : null;
 };
 
-// insert
+// 인증 필요 함수들 — 클라이언트에서 호출되므로 createClientComponentClient 사용
 export const insertTopic = async (userId: string, payload: TopicInsertWithoutAuthor) => {
-  const { data, error } = await supabase
+  const client = createClientComponentClient();
+  const { data, error } = await client
     .from('topic')
     .insert([{ ...payload, author: userId }])
     .select('id')
     .single();
-
   if (error) throw error;
   return data.id as number;
 };
 
-// update
 export const updateTopic = async (id: string, payload: TopicInsertWithoutAuthor) => {
-  const { error } = await supabase.from('topic').update(payload).eq('id', id);
+  const client = createClientComponentClient();
+  const { error } = await client.from('topic').update(payload).eq('id', id);
   if (error) throw error;
 };
 
-// delete
 export const deleteTopic = async (id: number) => {
-  const { error } = await supabase.from('topic').delete().eq('id', id);
+  const client = createClientComponentClient();
+  const { error } = await client.from('topic').delete().eq('id', id);
   if (error) throw error;
 };
 
-// 조회수 증가
 export const increaseViews = async (topicId: number) => {
-  const { error } = await supabase.rpc('increment_topic_views', {
-    topic_id: topicId,
-  });
-
+  const client = createClientComponentClient();
+  const { error } = await client.rpc('increment_topic_views', { topic_id: topicId });
   if (error) throw error;
 };
 
-// 좋아요 토글
 export const toggleLike = async (topicId: number) => {
-  const { error } = await supabase.rpc('toggle_topic_like', {
-    p_topic_id: topicId,
-  });
-
+  const client = createClientComponentClient();
+  const { error } = await client.rpc('toggle_topic_like', { p_topic_id: topicId });
   if (error) throw error;
 };
 
-// 임시 저장 조회
 export const fetchDrafts = async (userId: string) => {
-  const { data, error } = await supabase
+  const client = createClientComponentClient();
+  const { data, error } = await client
     .from('topic')
     .select('*')
     .eq('author', userId)
     .eq('status', TOPIC_STATUS.TEMP)
     .order('created_at', { ascending: false });
-
   if (error) throw error;
   return data ?? [];
 };
 
-// 토픽 좋아요 목록 조회
 export const fetchTopicLikes = async (topicId: number) => {
-  const { data, error } = await supabase
+  const client = createClientComponentClient();
+  const { data, error } = await client
     .from('topic_likes')
     .select('user_id')
     .eq('topic_id', topicId);
-
   if (error) throw error;
   return data ?? [];
 };
 
-// 모든 토픽 ID 목록 가져오기 (정적 생성용)
 export const getAllTopicIds = async () => {
   const { data, error } = await supabase
     .from('topic')
     .select('id')
     .eq('status', TOPIC_STATUS.PUBLISH);
-
   if (error) throw error;
-  return data?.map((topic) => topic.id.toString()) ?? [];
+  return data?.map((t) => t.id.toString()) ?? [];
 };

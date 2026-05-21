@@ -41,6 +41,7 @@ import {
 import { useCommentRealtimeHandlers } from '@/hooks/useComment';
 import { subscribeTopicRealtime } from '@/services/realtimeService';
 import type { Block } from '@blocknote/core';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 const TRENDING_TOPICS = [
   { id: 1, title: 'Next.js 14의 서버 컴포넌트 이해하기', category: 'React', likes: 42 },
@@ -107,16 +108,14 @@ export default function TopicDetailPage({ params }: { params: Promise<{ id: stri
     if (!topicId) return;
 
     const channel = subscribeTopicRealtime(topicId, {
-      onCommentInsert: (payload) => {
-        void handleCommentInsert(payload);
-      },
+      onCommentInsert: (payload) => void handleCommentInsert(payload),
       onCommentDelete: handleCommentDelete,
       onLikeInsert: handleLikeInsert,
       onLikeDelete: handleLikeDelete,
     });
 
     return () => {
-      void channel.unsubscribe();
+      channel.unsubscribe();
     };
   }, [topicId, handleCommentInsert, handleCommentDelete, handleLikeInsert, handleLikeDelete]);
 
@@ -131,7 +130,19 @@ export default function TopicDetailPage({ params }: { params: Promise<{ id: stri
     }
   }, [deleteMutation, router]);
 
-  if (isLoading && !topic) return <div className="min-h-screen bg-[#0a0a0a]" />;
+  // 로딩 중이거나 데이터가 없을 때의 처리 (이 부분을 수정함)
+  if (isLoading)
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-zinc-500 font-bold">
+        로딩 중...
+      </div>
+    );
+  if (!topic)
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-zinc-500 font-bold">
+        데이터를 찾을 수 없습니다.
+      </div>
+    );
 
   return (
     <main className="relative w-full min-h-screen bg-[#0a0a0a] text-zinc-100 pt-[66px] overflow-x-hidden">

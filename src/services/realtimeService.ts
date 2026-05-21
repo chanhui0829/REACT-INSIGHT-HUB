@@ -5,7 +5,7 @@
  */
 
 import type { RealtimePostgresChangesPayload, RealtimeChannel } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase';
+import { createClientComponentClient } from '@/lib/supabase';
 
 export type TopicLikeRow = {
   topic_id: number;
@@ -28,7 +28,7 @@ export const subscribeTopicRealtime = (
   topicId: number,
   handlers: TopicRealtimeHandlers
 ): RealtimeChannel => {
-  const supabase = createClient();
+  const supabase = createClientComponentClient();
   const channel = supabase.channel(`topic:${topicId}:realtime`);
 
   channel
@@ -63,8 +63,9 @@ export const subscribeTopicRealtime = (
         filter: `topic_id=eq.${topicId}`,
       },
       (payload) => handlers.onLikeDelete?.(payload as RealtimePostgresChangesPayload<TopicLikeRow>)
-    )
-    .subscribe();
+    );
+
+  channel.subscribe();
 
   return channel;
 };

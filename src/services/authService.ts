@@ -4,13 +4,13 @@
  * Supabase Auth를 활용한 로그인, 회원가입, 로그아웃 기능을 제공합니다.
  */
 
-import { supabase } from '@/lib/supabase';
-import { createClient } from '@/lib/supabase';
+import { createServerSupabaseClient, createClientComponentClient } from '@/lib/supabase';
 
 import type { User } from '@/types/auth.type';
 
 // 이메일 로그인
 export const signInWithEmail = async (email: string, password: string) => {
+  const supabase = await createClientComponentClient();
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -22,6 +22,7 @@ export const signInWithEmail = async (email: string, password: string) => {
 
 // 이메일 회원가입
 export const signUpWithEmail = async (email: string, password: string, nickname?: string) => {
+  const supabase = await createClientComponentClient();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -38,12 +39,14 @@ export const signUpWithEmail = async (email: string, password: string, nickname?
 
 // 로그아웃
 export const signOut = async () => {
+  const supabase = await createClientComponentClient();
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 };
 
 // 현재 사용자 정보 가져오기 (서버 전용)
 export async function getCurrentUser(): Promise<User | null> {
+  const supabase = await createServerSupabaseClient();
   const {
     data: { user },
     error,
@@ -66,6 +69,7 @@ export async function getCurrentUser(): Promise<User | null> {
 
 // 세션 상태 확인 (서버 전용)
 export const getSession = async () => {
+  const supabase = await createClientComponentClient();
   const {
     data: { session },
     error,
@@ -76,8 +80,8 @@ export const getSession = async () => {
 
 // Google OAuth 로그인 (클라이언트 전용)
 export const signInWithGoogleService = async () => {
-  const supabase = createClient(); 
-  
+  const supabase = createClientComponentClient();
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
@@ -91,6 +95,7 @@ export const signInWithGoogleService = async () => {
 
 // 닉네임 중복 확인
 export const checkNickname = async (nickname: string) => {
+  const supabase = await createClientComponentClient();
   const { data, error } = await supabase
     .from('user')
     .select('nickname')
@@ -111,6 +116,7 @@ export const updateUserAgreement = async (
   privacyAgreed: boolean,
   marketingAgreed: boolean
 ) => {
+  const supabase = await createClientComponentClient();
   const { error } = await supabase
     .from('user')
     .update({

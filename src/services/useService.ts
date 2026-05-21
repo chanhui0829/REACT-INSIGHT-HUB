@@ -4,10 +4,10 @@
  * 사용자 닉네임 등 추가 정보를 가져오는 기능을 제공합니다.
  */
 
-import { createClient } from '@/lib/supabase';
+import { createClientComponentClient } from '@/lib/supabase';
 
 export async function getUserNicknames(userIds: string[]) {
-  const supabase = createClient();
+  const supabase = await createClientComponentClient();
 
   if (userIds.length === 0) return {};
 
@@ -27,7 +27,7 @@ export async function getUserNicknames(userIds: string[]) {
 }
 
 export async function getUserNickname(userId: string) {
-  const supabase = createClient();
+  const supabase = await createClientComponentClient();
 
   const { data, error } = await supabase.from('user').select('nickname').eq('id', userId).single();
 

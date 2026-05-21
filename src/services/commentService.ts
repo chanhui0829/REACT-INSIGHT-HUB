@@ -4,7 +4,7 @@
  * 댓글 조회, 추가, 삭제 기능을 제공합니다.
  */
 
-import { createClient } from '@/lib/supabase';
+import { createClientComponentClient } from '@/lib/supabase';
 
 export type CommentItem = {
   id: number;
@@ -17,7 +17,7 @@ export type CommentItem = {
 
 // 댓글 목록
 export const fetchComments = async (topicId: number, from: number, to: number) => {
-  const supabase = createClient();
+  const supabase = await createClientComponentClient();
   const { data, error } = await supabase
     .from('comment_user_view')
     .select('*')
@@ -31,7 +31,7 @@ export const fetchComments = async (topicId: number, from: number, to: number) =
 
 // 댓글 개수 조회
 export const fetchCommentsCount = async (topicId: number): Promise<number> => {
-  const supabase = createClient();
+  const supabase = await createClientComponentClient();
   const { count, error } = await supabase
     .from('comment')
     .select('*', { count: 'exact', head: true })
@@ -43,7 +43,7 @@ export const fetchCommentsCount = async (topicId: number): Promise<number> => {
 
 // 댓글 추가
 export const addComment = async (topicId: number, text: string) => {
-  const supabase = createClient();
+  const supabase = await createClientComponentClient();
   const { data: auth } = await supabase.auth.getUser();
   const user = auth?.user;
 
@@ -66,7 +66,7 @@ export const addComment = async (topicId: number, text: string) => {
 
 // 댓글 단건 조회
 export const fetchCommentById = async (commentId: number): Promise<CommentItem | null> => {
-  const supabase = createClient();
+  const supabase = await createClientComponentClient();
   const { data, error } = await supabase
     .from('comment_user_view')
     .select('*')
@@ -79,7 +79,7 @@ export const fetchCommentById = async (commentId: number): Promise<CommentItem |
 
 // 삭제
 export const deleteComment = async (commentId: number) => {
-  const supabase = createClient();
+  const supabase = await createClientComponentClient();
   const { error } = await supabase.from('comment').delete().eq('id', commentId);
   if (error) throw error;
 };

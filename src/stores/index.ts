@@ -13,7 +13,7 @@ import {
   signOut,
   updateUserAgreement,
 } from '@/services/authService';
-import { createClient } from '@/lib/supabase';
+import { createClientComponentClient } from '@/lib/supabase';
 import { User } from '@/types/auth.type';
 
 interface AuthStore {
@@ -65,7 +65,7 @@ export const useAuthStore = create<AuthStore>()(
             return false;
           }
 
-          const supabase = createClient();
+          const supabase = createClientComponentClient();
           const { data: userData } = await supabase
             .from('user')
             .select('nickname')
@@ -100,7 +100,7 @@ export const useAuthStore = create<AuthStore>()(
             return false;
           }
 
-          const supabase = createClient();
+          const supabase = createClientComponentClient();
 
           const { error: rpcError } = await supabase.rpc('update_user_on_signup', {
             user_id: result.user.id,
