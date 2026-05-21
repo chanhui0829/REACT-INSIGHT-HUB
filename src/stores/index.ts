@@ -14,13 +14,7 @@ import {
   updateUserAgreement,
 } from '@/services/authService';
 import { createClient } from '@/lib/supabase';
-
-export interface User {
-  id: string;
-  email: string;
-  role: string;
-  nickname: string;
-}
+import { User } from '@/types/auth.type';
 
 interface AuthStore {
   user: User | null;

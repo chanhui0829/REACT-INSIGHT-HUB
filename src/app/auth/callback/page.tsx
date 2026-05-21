@@ -12,6 +12,7 @@ import { createClientComponentClient } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Input, Button, Checkbox } from '@/components/ui';
 import { useAuthStore } from '@/stores';
+import { User } from '@/types/auth.type';
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -30,59 +31,53 @@ export default function AuthCallback() {
     const handleAuthCallback = async () => {
       const supabase = createClientComponentClient();
 
-      // URL에서 code 파라미터 추출 후 세션 교환
       const code = new URLSearchParams(window.location.search).get('code');
       if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) {
-          console.error('코드 교환 오류', error);
-          toast.error('로그인 처리 중 오류가 발생했습니다.');
-          router.push('/sign-in');
-          return;
-        }
+        await supabase.auth.exchangeCodeForSession(code);
       }
 
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
+      // 5초까지 세션이 들어오길 기다립니다 (안전장치)
+      let session = null;
+      for (let i = 0; i < 5; i++) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          session = data.session;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 1000));
+      }
 
-      if (sessionError || !session) {
-        console.error('세션 처리 오류', sessionError);
-        toast.error('로그인 처리 중 오류가 발생했습니다.');
+      if (!session) {
+        console.error('끝내 세션을 찾지 못함');
+        toast.error('로그인 처리가 지연되고 있습니다.');
         router.push('/sign-in');
         return;
       }
 
-      const user = session.user;
-      setUserId(user.id);
-
-      const { data: userData, error: userError } = await supabase
+      // 유저 정보 조회 (ID 기반)
+      const userId = session.user.id;
+      const { data: userData, error } = await supabase
         .from('user')
         .select('nickname')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single();
 
-      if (userError || !userData) {
-        toast.error('사용자 정보 조회 중 오류가 발생했습니다.');
-        router.push('/sign-in');
-        return;
-      }
-
-      if (!userData.nickname) {
+      // DB에 닉네임이 없으면 신규 가입 프로세스(모달) 진행
+      if (error || !userData?.nickname) {
+        setUserId(userId);
         setShowNicknameModal(true);
-        setLoading(false);
       } else {
-        // 이미 닉네임 있으면 store 업데이트 후 메인으로
+        // 닉네임이 있는 기존 유저는 즉시 메인 페이지로 이동
         setStoreUser({
-          id: user.id,
-          email: user.email ?? '',
-          role: 'user',
+          id: userId,
+          email: session.user.email ?? '',
           nickname: userData.nickname,
+          role: 'user',
         });
-        toast.success('로그인을 성공하였습니다.');
         router.push('/');
       }
+
+      setLoading(false);
     };
 
     handleAuthCallback();
@@ -128,7 +123,6 @@ export default function AuthCallback() {
       return;
     }
 
-    // store 업데이트
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -136,8 +130,8 @@ export default function AuthCallback() {
       setStoreUser({
         id: session.user.id,
         email: session.user.email ?? '',
-        role: 'user',
         nickname,
+        role: 'user',
       });
     }
 

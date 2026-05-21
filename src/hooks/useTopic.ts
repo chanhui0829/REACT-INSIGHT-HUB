@@ -145,16 +145,19 @@ export const useToggleLike = (topicId: number, userId?: string) => {
         });
       }
 
-      // 목록 캐시도 업데이트 (모든 topics 목록 쿼리에서 해당 id 찾아 업데이트)
-      queryClient.setQueriesData({ queryKey: QUERY_KEYS.topics.all }, (old: any) => {
-        if (!old?.topics) return old;
-        return {
-          ...old,
-          topics: old.topics.map((t: Topic) =>
-            t.id === topicId ? { ...t, likes: isLiked ? t.likes - 1 : t.likes + 1 } : t
-          ),
-        };
-      });
+      // 목록 캐시 업데이트 — ['topics', ...] prefix로 시작하는 모든 쿼리 탐색
+      queryClient.setQueriesData<{ topics: Topic[]; total: number }>(
+        { queryKey: QUERY_KEYS.topics.all, exact: false },
+        (old) => {
+          if (!old?.topics) return old;
+          return {
+            ...old,
+            topics: old.topics.map((t) =>
+              t.id === topicId ? { ...t, likes: isLiked ? t.likes - 1 : t.likes + 1 } : t
+            ),
+          };
+        }
+      );
 
       if (prevLikes && userId) {
         queryClient.setQueryData(
@@ -178,9 +181,9 @@ export const useToggleLike = (topicId: number, userId?: string) => {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.topics.detail(topicId),
-      });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.topics.detail(topicId) });
+
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.topics.all, exact: false });
     },
   });
 };

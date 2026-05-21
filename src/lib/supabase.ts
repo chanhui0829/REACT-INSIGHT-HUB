@@ -16,7 +16,12 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export const supabase = createServerClient(supabaseUrl, supabaseAnonKey);
 
 // 클라이언트 사이드용 Supabase 클라이언트 생성 함수 (Client Component 전용)
-export const createClient = () => createBrowserClient(supabaseUrl, supabaseAnonKey);
+export const createClient = () =>
+  createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      flowType: 'pkce',
+    },
+  });
 
 // 클라이언트 사이드용 Supabase 클라이언트 (호환성 유지)
 export const createClientComponentClient = () => createBrowserClient(supabaseUrl, supabaseAnonKey);

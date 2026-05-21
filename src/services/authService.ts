@@ -5,6 +5,8 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase';
+
 import type { User } from '@/types/auth.type';
 
 // 이메일 로그인
@@ -51,12 +53,12 @@ export async function getCurrentUser(): Promise<User | null> {
 
   const { data: profile, error: profileError } = await supabase
     .from('user')
-    .select('id, email, nickname')
+    .select('id, email, nickname, role')
     .eq('id', user.id)
     .single();
 
   if (profileError) {
-    return { id: user.id, email: user.email ?? '', nickname: '' };
+    return { id: user.id, email: user.email ?? '', nickname: '', role: 'user' };
   }
 
   return profile;
@@ -74,6 +76,8 @@ export const getSession = async () => {
 
 // Google OAuth 로그인 (클라이언트 전용)
 export const signInWithGoogleService = async () => {
+  const supabase = createClient(); 
+  
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {

@@ -6,7 +6,8 @@
 export interface User {
   id: string;
   email: string;
-  nickname: string;
+  nickname: string | null;
+  role: string;
   created_at?: string;
 }
 
