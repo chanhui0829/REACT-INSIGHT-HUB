@@ -273,11 +273,15 @@ function CreateTopicContent() {
                   <SelectValue placeholder="주제를 선택하세요" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-950 border-white/10 text-slate-300">
-                    {TOPIC_CATEGORY.map((item) => (
-                      <SelectItem key={item.id} value={item.category} className="cursor-pointer hover:bg-indigo-500/10 hover:text-indigo-400">
-                        {item.label}
-                      </SelectItem>
-                    ))}
+                  {TOPIC_CATEGORY.map((item) => (
+                    <SelectItem
+                      key={item.id}
+                      value={item.category}
+                      className="cursor-pointer hover:bg-indigo-500/10 hover:text-indigo-400"
+                    >
+                      {item.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

@@ -60,7 +60,14 @@ export const fetchTopics = async (filters: FetchTopicsParams) => {
 export const getCachedTopics = (filters: FetchTopicsParams) =>
   unstable_cache(
     async () => fetchTopics(filters),
-    ['topics', filters.category, filters.searchQuery, filters.sortOption, String(filters.startIndex), String(filters.endIndex)],
+    [
+      'topics',
+      filters.category,
+      filters.searchQuery,
+      filters.sortOption,
+      String(filters.startIndex),
+      String(filters.endIndex),
+    ],
     {
       tags: ['posts'],
       revalidate: 3600,

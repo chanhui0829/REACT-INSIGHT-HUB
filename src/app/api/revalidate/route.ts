@@ -13,20 +13,14 @@ export async function POST(request: NextRequest) {
     const secret = request.headers.get('authorization')?.replace('Bearer ', '');
 
     if (secret !== process.env.REVALIDATION_SECRET) {
-      return NextResponse.json(
-        { error: 'Invalid revalidation secret' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Invalid revalidation secret' }, { status: 401 });
     }
 
     const body = await request.json();
     const { tag } = body;
 
     if (!tag || typeof tag !== 'string') {
-      return NextResponse.json(
-        { error: 'Tag is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Tag is required' }, { status: 400 });
     }
 
     // Next.js 15+: revalidateTag는 런타임에 string을 받음
@@ -43,9 +37,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Revalidation error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

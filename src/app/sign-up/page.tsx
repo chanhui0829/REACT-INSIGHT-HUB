@@ -30,7 +30,10 @@ import {
 // Zod Schema
 const formSchema = z
   .object({
-    nickname: z.string().min(2, '닉네임은 최소 2자 이상이어야 합니다.').max(20, '닉네임은 최대 20자까지 가능합니다.'),
+    nickname: z
+      .string()
+      .min(2, '닉네임은 최소 2자 이상이어야 합니다.')
+      .max(20, '닉네임은 최대 20자까지 가능합니다.'),
     email: z.string().email('올바른 이메일 주소를 입력해주세요.'),
     password: z.string().min(8, '비밀번호는 최소 8자 이상이어야 합니다.'),
     confirmPassword: z.string().min(8, '비밀번호 확인을 입력해주세요.'),
@@ -52,6 +55,7 @@ export default function SignUpPage() {
   const user = useAuthStore((state) => state.user);
   const signUp = useAuthStore((state) => state.signUp);
   const loading = useAuthStore((state) => state.loading);
+  const error = useAuthStore((state) => state.error);
 
   // React Hook Form 초기화
   const form = useForm<z.infer<typeof formSchema>>({
@@ -171,8 +175,12 @@ export default function SignUpPage() {
                           className="h-12 rounded-2xl bg-slate-950/50 border-white/10 focus:border-purple-500/50 transition-all"
                         />
                       </FormControl>
-                      {nicknameError && <p className="text-xs text-red-400 ml-1">{nicknameError}</p>}
-                      {isCheckingNickname && <p className="text-xs text-slate-500 ml-1">중복 검사 중...</p>}
+                      {nicknameError && (
+                        <p className="text-xs text-red-400 ml-1">{nicknameError}</p>
+                      )}
+                      {isCheckingNickname && (
+                        <p className="text-xs text-slate-500 ml-1">중복 검사 중...</p>
+                      )}
                       <FormMessage className="text-xs text-red-400" />
                     </FormItem>
                   )}
@@ -192,6 +200,7 @@ export default function SignUpPage() {
                         />
                       </FormControl>
                       <FormMessage className="text-xs text-red-400" />
+                      {error && <p className="text-xs text-red-400 ml-1">{error}</p>}
                     </FormItem>
                   )}
                 />

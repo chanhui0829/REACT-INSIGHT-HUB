@@ -19,5 +19,4 @@ export const supabase = createServerClient(supabaseUrl, supabaseAnonKey);
 export const createClient = () => createBrowserClient(supabaseUrl, supabaseAnonKey);
 
 // 클라이언트 사이드용 Supabase 클라이언트 (호환성 유지)
-export const createClientComponentClient = () =>
-  createBrowserClient(supabaseUrl, supabaseAnonKey);
+export const createClientComponentClient = () => createBrowserClient(supabaseUrl, supabaseAnonKey);

@@ -131,21 +131,30 @@ export const useToggleLike = (topicId: number, userId?: string) => {
     mutationFn: () => toggleLike(topicId),
 
     onMutate: async () => {
-      await queryClient.cancelQueries({
-        queryKey: QUERY_KEYS.topics.detail(topicId),
-      });
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.topics.detail(topicId) });
 
       const prevTopic = queryClient.getQueryData<Topic>(QUERY_KEYS.topics.detail(topicId));
       const prevLikes = queryClient.getQueryData<TopicLike[]>(QUERY_KEYS.likes.list(topicId));
-
       const isLiked = prevLikes?.some((l) => l.user_id === userId);
 
+      // 상세 페이지 캐시 업데이트
       if (prevTopic) {
         queryClient.setQueryData(QUERY_KEYS.topics.detail(topicId), {
           ...prevTopic,
           likes: isLiked ? prevTopic.likes - 1 : prevTopic.likes + 1,
         });
       }
+
+      // 목록 캐시도 업데이트 (모든 topics 목록 쿼리에서 해당 id 찾아 업데이트)
+      queryClient.setQueriesData({ queryKey: QUERY_KEYS.topics.all }, (old: any) => {
+        if (!old?.topics) return old;
+        return {
+          ...old,
+          topics: old.topics.map((t: Topic) =>
+            t.id === topicId ? { ...t, likes: isLiked ? t.likes - 1 : t.likes + 1 } : t
+          ),
+        };
+      });
 
       if (prevLikes && userId) {
         queryClient.setQueryData(
@@ -177,8 +186,21 @@ export const useToggleLike = (topicId: number, userId?: string) => {
 };
 
 export const useDeleteTopic = (topicId: number) => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: () => deleteTopic(topicId),
+    onSuccess: async () => {
+      await fetch('/api/revalidate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_REVALIDATION_SECRET}`,
+        },
+        body: JSON.stringify({ tag: 'posts' }),
+      });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.topics.all });
+    },
   });
 };
 

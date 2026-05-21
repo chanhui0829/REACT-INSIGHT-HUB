@@ -11,10 +11,7 @@ export async function getUserNicknames(userIds: string[]) {
 
   if (userIds.length === 0) return {};
 
-  const { data, error } = await supabase
-    .from('user')
-    .select('id, nickname')
-    .in('id', userIds);
+  const { data, error } = await supabase.from('user').select('id, nickname').in('id', userIds);
 
   if (error) {
     console.error('Error fetching user nicknames:', error);
@@ -32,11 +29,7 @@ export async function getUserNicknames(userIds: string[]) {
 export async function getUserNickname(userId: string) {
   const supabase = createClient();
 
-  const { data, error } = await supabase
-    .from('user')
-    .select('nickname')
-    .eq('id', userId)
-    .single();
+  const { data, error } = await supabase.from('user').select('nickname').eq('id', userId).single();
 
   if (error) {
     console.error('Error fetching user nickname:', error);

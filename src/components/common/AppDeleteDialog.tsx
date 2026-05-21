@@ -2,7 +2,7 @@
  * @file AppDeleteDialog.tsx
  * @description 삭제 확인 다이얼로그 컴포넌트입니다.
  */
-'use client'
+'use client';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Trash2, Loader2 } from 'lucide-react';
 

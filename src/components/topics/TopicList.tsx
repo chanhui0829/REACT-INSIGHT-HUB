@@ -68,8 +68,7 @@ export function TopicList({
           const existingIds = new Set(prev.map((t) => t.id));
           const uniqueNewTopics = data.topics.filter((t) => !existingIds.has(t.id));
 
-          const newTopics =
-            page === 1 ? data.topics : [...prev, ...uniqueNewTopics];
+          const newTopics = page === 1 ? data.topics : [...prev, ...uniqueNewTopics];
 
           return newTopics.length > MAX_DISPLAYED_ITEMS
             ? newTopics.slice(-MAX_DISPLAYED_ITEMS)
@@ -134,9 +133,7 @@ export function TopicList({
           {(isFetching || isPending) && (
             <div className="flex items-center gap-2 text-slate-500">
               <Loader2 size={20} className="animate-spin" />
-              <span className="text-xs font-bold uppercase tracking-wider">
-                Loading more...
-              </span>
+              <span className="text-xs font-bold uppercase tracking-wider">Loading more...</span>
             </div>
           )}
         </div>

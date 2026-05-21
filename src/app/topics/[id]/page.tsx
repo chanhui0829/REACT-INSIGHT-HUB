@@ -10,13 +10,24 @@ import { useEffect, useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
-import { ArrowLeft, Eye, Heart, Calendar, Share2, User, Bookmark, Link2, Printer, TrendingUp } from 'lucide-react';
+import {
+  ArrowLeft,
+  Eye,
+  Heart,
+  Calendar,
+  Share2,
+  User,
+  Bookmark,
+  Link2,
+  Printer,
+  TrendingUp,
+} from 'lucide-react';
 import * as React from 'react';
 
 import { useAuthStore } from '@/stores';
 import { AppDeleteDialog, AppEditor } from '@/components/common';
 import { Button, Badge } from '@/components/ui';
-import {CommentBox} from '@/components/topics';
+import { CommentBox } from '@/components/topics';
 import { getUserNickname } from '@/services/useService';
 
 import {
@@ -236,7 +247,10 @@ export default function TopicDetailPage({ params }: { params: Promise<{ id: stri
                       }}
                       className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-slate-900/40 border border-white/10 hover:border-indigo-500/30 hover:bg-slate-900/60 transition-all group"
                     >
-                      <action.icon size={18} className="text-slate-400 group-hover:text-indigo-400 transition-colors" />
+                      <action.icon
+                        size={18}
+                        className="text-slate-400 group-hover:text-indigo-400 transition-colors"
+                      />
                       <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-300 transition-colors">
                         {action.label}
                       </span>

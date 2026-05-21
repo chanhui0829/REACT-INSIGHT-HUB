@@ -171,7 +171,10 @@ export const useDeleteComment = (topicId: number) => {
       );
 
       if (typeof previousCount === 'number') {
-        queryClient.setQueryData(QUERY_KEYS.comments.count(topicId), Math.max(0, previousCount - 1));
+        queryClient.setQueryData(
+          QUERY_KEYS.comments.count(topicId),
+          Math.max(0, previousCount - 1)
+        );
       }
 
       return { previousList, previousCount };

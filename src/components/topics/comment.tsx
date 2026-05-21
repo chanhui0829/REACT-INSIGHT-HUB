@@ -50,7 +50,10 @@ export function CommentBox({ topicId }: CommentBoxProps) {
 
   const comments = useMemo(() => data?.pages.flatMap((page) => page.comments) ?? [], [data]);
 
-  const authorIds = useMemo(() => comments.map((c) => c.user_id).filter(Boolean) as string[], [comments]);
+  const authorIds = useMemo(
+    () => comments.map((c) => c.user_id).filter(Boolean) as string[],
+    [comments]
+  );
 
   const { data: nicknameMap = {} } = useQuery({
     queryKey: ['user', 'nicknames', [...authorIds].sort().join(',')],
@@ -135,11 +138,7 @@ export function CommentBox({ topicId }: CommentBoxProps) {
             disabled={addCommentMutation.isPending}
             className="h-9 px-5 bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-xs rounded-full transition-all shadow-md shadow-indigo-500/10 active:scale-95"
           >
-            {addCommentMutation.isPending ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              '등록'
-            )}
+            {addCommentMutation.isPending ? <Loader2 className="size-3.5 animate-spin" /> : '등록'}
           </Button>
         </div>
       </div>

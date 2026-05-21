@@ -70,7 +70,7 @@ const TopicCardComponent = ({ topic, authorNickname }: Props) => {
           bg-slate-900 border-white/5 rounded-[20px] sm:rounded-[24px] md:rounded-[32px]
           hover:shadow-[0_20px_40px_rgba(99,102,241,0.15)]
           transition-all duration-500 transform hover:scale-[1.02]
-          animate-fade-in-up flex flex-row sm:flex-col sm:aspect-[4/5] md:aspect-[4/5] lg:aspect-[4/5]
+          animate-fade-in-up flex flex-row sm:flex-col sm:aspect-4/5 md:aspect-4/5 lg:aspect-4/5
         "
       >
         {/* Image Section */}
@@ -100,9 +100,9 @@ const TopicCardComponent = ({ topic, authorNickname }: Props) => {
           </h3>
 
           {/* Preview Text */}
-<p className="text-[11px] sm:text-xs lg:text-sm text-slate-400 line-clamp-2 leading-tight overflow-hidden break-keep">
-  {previewText}
-</p>
+          <p className="text-[11px] sm:text-xs lg:text-sm text-slate-400 line-clamp-2 leading-tight overflow-hidden break-keep">
+            {previewText}
+          </p>
           {/* Meta Info */}
           <div className="flex items-center justify-between pt-2 border-t border-white/5">
             <div className="flex flex-col min-w-0">

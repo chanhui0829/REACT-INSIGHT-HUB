@@ -35,12 +35,14 @@ export const subscribeTopicRealtime = (
     .on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'comment', filter: `topic_id=eq.${topicId}` },
-      (payload) => handlers.onCommentInsert?.(payload as RealtimePostgresChangesPayload<TopicCommentRow>)
+      (payload) =>
+        handlers.onCommentInsert?.(payload as RealtimePostgresChangesPayload<TopicCommentRow>)
     )
     .on(
       'postgres_changes',
       { event: 'DELETE', schema: 'public', table: 'comment', filter: `topic_id=eq.${topicId}` },
-      (payload) => handlers.onCommentDelete?.(payload as RealtimePostgresChangesPayload<TopicCommentRow>)
+      (payload) =>
+        handlers.onCommentDelete?.(payload as RealtimePostgresChangesPayload<TopicCommentRow>)
     )
     .on(
       'postgres_changes',

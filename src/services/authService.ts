@@ -12,7 +12,6 @@ export const signInWithEmail = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
-    
   });
 
   if (error) throw error;
@@ -43,7 +42,10 @@ export const signOut = async () => {
 
 // 현재 사용자 정보 가져오기 (서버 전용)
 export async function getCurrentUser(): Promise<User | null> {
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
   if (error || !user) return null;
 
@@ -62,7 +64,10 @@ export async function getCurrentUser(): Promise<User | null> {
 
 // 세션 상태 확인 (서버 전용)
 export const getSession = async () => {
-  const { data: { session }, error } = await supabase.auth.getSession();
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
   if (error) throw error;
   return session;
 };

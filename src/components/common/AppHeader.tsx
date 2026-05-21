@@ -9,7 +9,16 @@
 import { useCallback, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, LogOut, LayoutGrid, BookText, ChevronDown, User as UserIcon, Settings } from 'lucide-react';
+import {
+  Menu,
+  X,
+  LogOut,
+  LayoutGrid,
+  BookText,
+  ChevronDown,
+  User as UserIcon,
+  Settings,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 // UI Components
@@ -240,14 +249,18 @@ function AppHeader({ user: serverUser }: AppHeaderProps) {
                 </div>
                 <div className="flex flex-col gap-2">
                   <button
-                    onClick={() => { closeMenu(); }}
+                    onClick={() => {
+                      closeMenu();
+                    }}
                     className="flex items-center gap-3 w-full p-3.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-bold hover:bg-white/10 hover:text-white transition-all text-sm"
                   >
                     <UserIcon size={16} className="text-slate-500" />
                     프로필
                   </button>
                   <button
-                    onClick={() => { closeMenu(); }}
+                    onClick={() => {
+                      closeMenu();
+                    }}
                     className="flex items-center gap-3 w-full p-3.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 font-bold hover:bg-white/10 hover:text-white transition-all text-sm"
                   >
                     <Settings size={16} className="text-slate-500" />
@@ -267,14 +280,14 @@ function AppHeader({ user: serverUser }: AppHeaderProps) {
                 <Link
                   href="/sign-in"
                   onClick={closeMenu}
-                  className="w-full py-3.5 text-slate-400 font-bold text-sm hover:text-white transition-colors"
+                  className="w-full py-3.5 text-center rounded-2xl bg-white/5 border border-white/10 text-slate-300 font-bold text-sm hover:bg-white/10 hover:text-white transition-all"
                 >
                   로그인
                 </Link>
                 <Link
                   href="/sign-up"
                   onClick={closeMenu}
-                  className="w-full py-3.5 bg-indigo-500 text-white rounded-full font-black text-sm active:scale-95 transition-all"
+                  className="w-full py-3.5 text-center bg-indigo-500 text-white rounded-2xl font-black text-sm active:scale-95 transition-all"
                 >
                   회원가입
                 </Link>
