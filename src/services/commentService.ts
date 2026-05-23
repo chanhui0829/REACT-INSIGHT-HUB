@@ -1,10 +1,9 @@
 /**
  * @file commentService.ts
- * @description 댓글 관련 서비스입니다.
- * 댓글 조회, 추가, 삭제 기능을 제공합니다.
+ * @description 댓글 조회 전용 서비스입니다.
  */
 
-import { createClientComponentClient } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export type CommentItem = {
   id: number;
@@ -17,7 +16,6 @@ export type CommentItem = {
 
 // 댓글 목록
 export const fetchComments = async (topicId: number, from: number, to: number) => {
-  const supabase = await createClientComponentClient();
   const { data, error } = await supabase
     .from('comment_user_view')
     .select('*')
@@ -31,7 +29,6 @@ export const fetchComments = async (topicId: number, from: number, to: number) =
 
 // 댓글 개수 조회
 export const fetchCommentsCount = async (topicId: number): Promise<number> => {
-  const supabase = await createClientComponentClient();
   const { count, error } = await supabase
     .from('comment')
     .select('*', { count: 'exact', head: true })
@@ -41,32 +38,8 @@ export const fetchCommentsCount = async (topicId: number): Promise<number> => {
   return count ?? 0;
 };
 
-// 댓글 추가
-export const addComment = async (topicId: number, text: string) => {
-  const supabase = await createClientComponentClient();
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth?.user;
-
-  if (!user) throw new Error('로그인 필요');
-
-  const { data, error } = await supabase
-    .from('comment')
-    .insert({
-      content: text,
-      topic_id: topicId,
-      user_id: user.id,
-    })
-    .select('*')
-    .single();
-
-  if (error) throw error;
-
-  return { ...data, email: user.email };
-};
-
 // 댓글 단건 조회
 export const fetchCommentById = async (commentId: number): Promise<CommentItem | null> => {
-  const supabase = await createClientComponentClient();
   const { data, error } = await supabase
     .from('comment_user_view')
     .select('*')
@@ -75,11 +48,4 @@ export const fetchCommentById = async (commentId: number): Promise<CommentItem |
 
   if (error) throw error;
   return (data as CommentItem) ?? null;
-};
-
-// 삭제
-export const deleteComment = async (commentId: number) => {
-  const supabase = await createClientComponentClient();
-  const { error } = await supabase.from('comment').delete().eq('id', commentId);
-  if (error) throw error;
 };

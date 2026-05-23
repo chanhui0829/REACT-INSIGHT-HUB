@@ -15,7 +15,8 @@ import 'dayjs/locale/ko';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores';
 import { QUERY_KEYS } from '@/constants/querykey.constant';
-import { fetchDrafts, deleteTopic } from '@/services/topicService';
+import { fetchDrafts } from '@/services/topicService';
+import { deleteTopic } from '@/app/actions/topicActions';
 
 import {
   Badge,

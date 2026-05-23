@@ -33,7 +33,7 @@ import {
 } from '@/components/ui';
 
 // Services & Store
-import { signOut } from '@/services/authService';
+import { signOut } from '@/app/actions/authActions';
 import { useAuthStore } from '@/stores';
 
 // Types

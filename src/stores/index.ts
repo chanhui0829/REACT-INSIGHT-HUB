@@ -12,7 +12,7 @@ import {
   signUpWithEmail,
   signOut,
   updateUserAgreement,
-} from '@/services/authService';
+} from '@/app/actions/authActions';
 import { createClientComponentClient } from '@/lib/supabase';
 import { User } from '@/types/auth.type';
 

@@ -11,12 +11,11 @@ import { useCallback } from 'react';
 import { QUERY_KEYS } from '@/constants/querykey.constant';
 import {
   fetchComments,
-  addComment,
-  deleteComment,
   fetchCommentsCount,
   fetchCommentById,
   type CommentItem,
 } from '@/services/commentService';
+import { addComment, deleteComment } from '@/app/actions/commentActions';
 import type { InfiniteData } from '@tanstack/react-query';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { TopicCommentRow } from '@/services/realtimeService';
@@ -151,7 +150,7 @@ export const useDeleteComment = (topicId: number) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (commentId: number) => deleteComment(commentId),
+    mutationFn: (commentId: number) => deleteComment(commentId, topicId),
     onMutate: async (commentId) => {
       await queryClient.cancelQueries({
         queryKey: QUERY_KEYS.comments.list(topicId),

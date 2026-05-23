@@ -1,18 +1,15 @@
 /**
  * @file topicService.ts
+ * @description 토픽 목록 및 상세 정보를 조회하는 서비스입니다.
+ * 서버 컴포넌트에서 직접 호출하여 성능을 최적화합니다.
  */
 
-import { supabase, createClientComponentClient } from '@/lib/supabase';
-import { nanoid } from 'nanoid';
+import { supabase } from '@/lib/supabase';
 import type { Topic } from '@/types/topic.type';
 import { TOPIC_STATUS } from '@/types/topic.type';
 import { unstable_cache } from 'next/cache';
 
-export type TopicInsertWithoutAuthor = Omit<
-  Topic,
-  'id' | 'created_at' | 'author' | 'views' | 'likes'
->;
-
+// 데이터 조회 파라미터 타입 정의
 type FetchTopicsParams = {
   category: string;
   searchQuery: string;
@@ -21,29 +18,50 @@ type FetchTopicsParams = {
   endIndex: number;
 };
 
-// unstable_cache 안에서 사용 — cookies 없는 supabase
+// 모든 토픽 데이터를 DB에서 조회
 export const fetchTopics = async (filters: FetchTopicsParams) => {
   const { category, searchQuery, sortOption, startIndex, endIndex } = filters;
+  try {
+    let query = supabase
+      .from('topic')
+      .select('*', { count: 'exact' })
+      .eq('status', TOPIC_STATUS.PUBLISH);
 
-  let query = supabase
-    .from('topic')
-    .select('*', { count: 'exact' })
-    .eq('status', TOPIC_STATUS.PUBLISH);
+    if (category !== 'all') query = query.eq('category', category);
+    if (searchQuery)
+      query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
 
-  if (category !== 'all') query = query.eq('category', category);
-  if (searchQuery) query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
+    const orderBy =
+      sortOption === 'likes' ? 'likes' : sortOption === 'views' ? 'views' : 'created_at';
 
-  const orderBy =
-    sortOption === 'likes' ? 'likes' : sortOption === 'views' ? 'views' : 'created_at';
+    const { data, error, count } = await query
+      .order(orderBy, { ascending: false })
+      .range(startIndex, endIndex);
 
-  const { data, error, count } = await query
-    .order(orderBy, { ascending: false })
-    .range(startIndex, endIndex);
+    if (error) throw error;
 
-  if (error) throw error;
-  return { topics: data ?? [], total: count ?? 0 };
+    // 안전하게 데이터 가공 (여기에만 방어 로직 추가)
+    const safeData = (data || []).map((item) => {
+      try {
+        if (item.content && typeof item.content === 'string') {
+          JSON.parse(item.content);
+        }
+        return item; // 정상 데이터 반환
+      } catch (e) {
+        return { ...item, content: '[]' }; // 파싱 에러 시 빈 배열로 반환
+      }
+    });
+
+    return { topics: safeData ?? [], total: count ?? 0 };
+  } catch (error) {
+    console.error('--- fetchTopics 에러 상세 분석 ---');
+    console.error('Params:', { category, searchQuery, sortOption, startIndex, endIndex });
+    console.error('Error Details:', error);
+    return { topics: [], total: 0 };
+  }
 };
 
+// 캐싱된 토픽 목록 반환
 export const getCachedTopics = (filters: FetchTopicsParams) =>
   unstable_cache(
     async () => fetchTopics(filters),
@@ -58,7 +76,7 @@ export const getCachedTopics = (filters: FetchTopicsParams) =>
     { tags: ['posts'], revalidate: 3600 }
   )();
 
-// 단일 조회 — cookies 없는 supabase (캐시용)
+// 토픽 상세 조회
 export const fetchTopicById = async (id?: string): Promise<Topic | null> => {
   if (!id) return null;
   const { data, error } = await supabase.from('topic').select('*').eq('id', id).single();
@@ -66,62 +84,9 @@ export const fetchTopicById = async (id?: string): Promise<Topic | null> => {
   return data;
 };
 
-// 썸네일 업로드 — 클라이언트에서 호출
-export const uploadThumbnail = async (file: File | string | null) => {
-  if (!file) return null;
-  const client = createClientComponentClient();
-
-  if (file instanceof File) {
-    const ext = file.name.split('.').pop();
-    const fileName = `${nanoid()}.${ext}`;
-    const filePath = `topics/${fileName}`;
-    const { error } = await client.storage.from('files').upload(filePath, file);
-    if (error) throw error;
-    const { data } = client.storage.from('files').getPublicUrl(filePath);
-    return data.publicUrl;
-  }
-  return typeof file === 'string' ? file : null;
-};
-
-// 인증 필요 함수들 — 클라이언트에서 호출되므로 createClientComponentClient 사용
-export const insertTopic = async (userId: string, payload: TopicInsertWithoutAuthor) => {
-  const client = createClientComponentClient();
-  const { data, error } = await client
-    .from('topic')
-    .insert([{ ...payload, author: userId }])
-    .select('id')
-    .single();
-  if (error) throw error;
-  return data.id as number;
-};
-
-export const updateTopic = async (id: string, payload: TopicInsertWithoutAuthor) => {
-  const client = createClientComponentClient();
-  const { error } = await client.from('topic').update(payload).eq('id', id);
-  if (error) throw error;
-};
-
-export const deleteTopic = async (id: number) => {
-  const client = createClientComponentClient();
-  const { error } = await client.from('topic').delete().eq('id', id);
-  if (error) throw error;
-};
-
-export const increaseViews = async (topicId: number) => {
-  const client = createClientComponentClient();
-  const { error } = await client.rpc('increment_topic_views', { topic_id: topicId });
-  if (error) throw error;
-};
-
-export const toggleLike = async (topicId: number) => {
-  const client = createClientComponentClient();
-  const { error } = await client.rpc('toggle_topic_like', { p_topic_id: topicId });
-  if (error) throw error;
-};
-
+// 내 임시 저장 글 목록 조회
 export const fetchDrafts = async (userId: string) => {
-  const client = createClientComponentClient();
-  const { data, error } = await client
+  const { data, error } = await supabase
     .from('topic')
     .select('*')
     .eq('author', userId)
@@ -131,16 +96,22 @@ export const fetchDrafts = async (userId: string) => {
   return data ?? [];
 };
 
+// 특정 토픽의 좋아요 목록 조회
 export const fetchTopicLikes = async (topicId: number) => {
-  const client = createClientComponentClient();
-  const { data, error } = await client
+  const { data, error } = await supabase
     .from('topic_likes')
     .select('user_id')
     .eq('topic_id', topicId);
-  if (error) throw error;
+
+  if (error) {
+    console.error('Supabase 에러 발생:', error);
+    throw error;
+  }
+
   return data ?? [];
 };
 
+// 모든 토픽 ID 조회 (SEO용)
 export const getAllTopicIds = async () => {
   const { data, error } = await supabase
     .from('topic')

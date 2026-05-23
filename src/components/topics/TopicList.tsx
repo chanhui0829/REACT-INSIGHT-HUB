@@ -1,21 +1,17 @@
 /**
  * @file TopicList.tsx
- * @description 토픽 목록 컴포넌트입니다.
- * 무한 스크롤 기능을 구현합니다.
+ * @description 토픽 목록을 무한 스크롤로 렌더링하는 컴포넌트입니다.
  */
 
 'use client';
 
-import { useMemo, useEffect, useState, useRef, useTransition, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
+import { useMemo, useEffect, useState, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TopicCard } from '@/components/topics';
-import { getUserNicknames } from '@/services/useService';
 import { fetchTopics } from '@/services/topicService';
 import type { Topic } from '@/types/topic.type';
 
 const ITEMS_PER_PAGE = 12;
-const MAX_DISPLAYED_ITEMS = 60;
 
 interface Props {
   initialTopics: Topic[];
@@ -32,113 +28,72 @@ export function TopicList({
   searchQuery,
   sortOption,
 }: Props) {
-  // 인피니트 스크롤 상태
-  const [displayedTopics, setDisplayedTopics] = useState<Topic[]>(initialTopics);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(initialTotal > ITEMS_PER_PAGE);
+  const [allTopics, setAllTopics] = useState<Topic[]>(initialTopics); // 상태로 관리
+  const [hasMore, setHasMore] = useState(true); // 더 가져올 데이터가 있는지 판단
   const loaderRef = useRef<HTMLDivElement>(null);
-  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
 
-  // 페이지당 아이템 수 및 데이터 범위
-  const { startIndex, endIndex } = useMemo(() => {
-    const start = (page - 1) * ITEMS_PER_PAGE;
-    return { startIndex: start, endIndex: start + ITEMS_PER_PAGE - 1 };
-  }, [page]);
+  // 1. 카테고리나 정렬이 바뀌면 페이지와 목록 초기화
+  useEffect(() => {
+    setPage(1);
+    setAllTopics(initialTopics);
+    setHasMore(initialTotal > initialTopics.length);
+  }, [category, searchQuery, sortOption, initialTopics, initialTotal]);
 
-  // 데이터 fetching
+  // 2. 2페이지 이상 데이터 받아오기
   const { data, isFetching } = useQuery({
-    queryKey: ['topics', category, searchQuery, sortOption, startIndex, endIndex],
+    queryKey: ['topics', category, searchQuery, sortOption, page],
     queryFn: () =>
       fetchTopics({
         category,
         searchQuery,
         sortOption,
-        startIndex,
-        endIndex,
+        startIndex: (page - 1) * ITEMS_PER_PAGE,
+        endIndex: page * ITEMS_PER_PAGE - 1,
       }),
-    enabled: page > 1,
-    staleTime: 1000 * 60 * 5,
+    enabled: page > 1 && hasMore, // 데이터가 있을 때만 요청
   });
 
-  // 새 데이터 로드 시 displayedTopics에 추가
+  // 3. 페이지 바뀔 때마다 데이터 누적
   useEffect(() => {
     if (data?.topics) {
-      startTransition(() => {
-        setDisplayedTopics((prev) => {
-          const existingIds = new Set(prev.map((t) => t.id));
-          const uniqueNewTopics = data.topics.filter((t) => !existingIds.has(t.id));
-
-          const newTopics = page === 1 ? data.topics : [...prev, ...uniqueNewTopics];
-
-          return newTopics.length > MAX_DISPLAYED_ITEMS
-            ? newTopics.slice(-MAX_DISPLAYED_ITEMS)
-            : newTopics;
-        });
-        setHasMore(page * ITEMS_PER_PAGE < (data?.total ?? 0));
-      });
-    }
-  }, [data, page]);
-
-  // 필터 변경 시 페이지 초기화
-  useEffect(() => {
-    setPage(1);
-    setDisplayedTopics(initialTopics);
-    setHasMore(initialTotal > ITEMS_PER_PAGE);
-  }, [category, searchQuery, sortOption, initialTopics, initialTotal]);
-
-  // 인피니트 스크롤을 위한 Intersection Observer
-  const handleIntersect = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      if (entries[0].isIntersecting && hasMore && !isFetching) {
-        setPage((prev) => prev + 1);
+      setAllTopics((prev) => [...prev, ...data.topics]);
+      // 받아온 데이터가 페이지 사이즈보다 작으면 마지막 페이지로 간주
+      if (data.topics.length < ITEMS_PER_PAGE) {
+        setHasMore(false);
       }
-    },
-    [hasMore, isFetching]
-  );
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(handleIntersect, { threshold: 0.5 });
-
-    if (loaderRef.current) {
-      observer.observe(loaderRef.current);
     }
+  }, [data?.topics]);
 
+  // 4. 무한 스크롤 감지
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isFetching && hasMore) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loaderRef.current) observer.observe(loaderRef.current);
     return () => observer.disconnect();
-  }, [handleIntersect]);
-
-  const authorIds = useMemo(() => {
-    const ids = displayedTopics.map((topic) => topic.author);
-    return [...new Set(ids)];
-  }, [displayedTopics]);
-
-  const { data: nicknameMap = {} } = useQuery({
-    queryKey: ['user', 'nicknames', [...authorIds].sort().join(',')],
-    queryFn: () => getUserNicknames(authorIds),
-    enabled: authorIds.length > 0,
-    staleTime: 1000 * 60 * 30,
-    gcTime: 1000 * 60 * 60,
-  });
+  }, [isFetching, hasMore]);
 
   return (
     <div className="min-h-[600px]">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {displayedTopics.map((topic) => (
-          <TopicCard key={topic.id} topic={topic} authorNickname={nicknameMap[topic.author]} />
+        {allTopics.map((topic, index) => (
+          <TopicCard key={`${topic.id}-${index}`} topic={topic} />
         ))}
       </div>
 
-      {/* Infinite scroll loader */}
       {hasMore && (
-        <div ref={loaderRef} className="py-8 flex justify-center">
-          {(isFetching || isPending) && (
-            <div className="flex items-center gap-2 text-slate-500">
-              <Loader2 size={20} className="animate-spin" />
-              <span className="text-xs font-bold uppercase tracking-wider">Loading more...</span>
-            </div>
-          )}
+        <div ref={loaderRef} className="h-20 flex items-center justify-center mt-10">
+          {isFetching && <div className="text-zinc-500 font-bold animate-pulse">로딩 중...</div>}
         </div>
       )}
-      {!hasMore && <div className="py-8" />}
     </div>
   );
 }

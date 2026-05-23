@@ -8,7 +8,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEYS } from '@/constants/querykey.constant';
-import { insertTopic, updateTopic, uploadThumbnail } from '@/services/topicService';
+import { insertTopic, updateTopic } from '@/app/actions/topicActions';
+import { uploadThumbnail } from '@/services/clientService';
 import type { Topic } from '@/types/topic.type';
 import { TOPIC_STATUS } from '@/types/topic.type';
 

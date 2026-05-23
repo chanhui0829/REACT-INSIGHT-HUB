@@ -8,6 +8,7 @@
 
 import { memo, useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/ko';
@@ -75,11 +76,12 @@ const TopicCardComponent = ({ topic, authorNickname }: Props) => {
       >
         {/* Image Section */}
         <div className="relative w-[130px] shrink-0 sm:w-full sm:h-[55%] overflow-hidden rounded-l-[20px] sm:rounded-none sm:rounded-t-[24px] md:rounded-t-[32px]">
-          <img
+          <Image
             src={topic.thumbnail ?? '/assets/default-thumbnail.png'}
             alt="thumbnail"
-            loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            fill
+            sizes="(max-width: 640px) 130px, 100%"
+            className="object-cover transition-transform duration-700 group-hover:scale-110"
           />
           {/* Category Badge */}
           <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
