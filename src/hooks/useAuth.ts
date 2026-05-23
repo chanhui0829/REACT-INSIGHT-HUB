@@ -9,7 +9,8 @@
 import { useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/stores';
 import { createClientComponentClient } from '@/lib/supabase';
-import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
+// AuthChangeEvent 타입을 추가로 임포트합니다.
+import type { Session, User as SupabaseUser, AuthChangeEvent } from '@supabase/supabase-js';
 
 // Zustand User 타입 변환 함수
 async function mapUser(sessionUser: SupabaseUser | null) {
@@ -62,8 +63,9 @@ export default function useAuthListener() {
     initSession();
 
     const supabase = createClientComponentClient();
+    // AuthChangeEvent 타입을 명시적으로 지정합니다.
     const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session: Session | null) => {
+      async (event: AuthChangeEvent, session: Session | null) => {
         if (!mounted) return;
 
         // SIGNED_OUT 이벤트일 때만 store 초기화
@@ -74,7 +76,7 @@ export default function useAuthListener() {
 
         // SIGNED_IN은 login 액션에서 이미 처리하므로 스킵
         // OAuth 콜백(INITIAL_SESSION)은 처리 필요
-        if (_event === 'INITIAL_SESSION' || _event === 'TOKEN_REFRESHED') {
+        if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
           await applyUser(session.user);
         }
       }
