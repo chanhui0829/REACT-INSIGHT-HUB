@@ -42,6 +42,10 @@ src/
 ├── app/                        # Next.js App Router
 │   ├── layout.tsx              # 루트 레이아웃 (SSR, 인증 유저 fetch)
 │   ├── page.tsx                # 메인 피드 (SSR + unstable_cache)
+│   ├── actions/                # 데이터 변경 로직 (CUD)
+│   │   ├── authActions.ts      # 로그인, 회원가입, 약관 동의
+│   │   ├── topicActions.ts     # 토픽 생성, 수정, 삭제, 좋아요 등
+│   │   └── commentActions.ts   # 댓글 생성, 삭제
 │   ├── api/revalidate/         # On-Demand 캐시 무효화 API
 │   ├── auth/callback/          # OAuth 콜백 처리
 │   ├── sign-in / sign-up/
@@ -53,15 +57,16 @@ src/
 │   ├── common/                 # 공통 UI (헤더, 에디터, 파일업로드 등)
 │   └── topics/                 # 토픽 관련 컴포넌트 (카드, 목록, 댓글)
 ├── hooks/                      # TanStack Query 커스텀 훅
-│   ├── useTopic.ts
+│   └── useAuth.ts
 │   ├── useComment.ts
 │   ├── useCreateTopic.ts
-│   └── useAuth.ts
+│   ├── useTopic.ts
 ├── services/                   # Supabase 직접 호출 함수
-│   ├── topicService.ts
-│   ├── commentService.ts
 │   ├── authService.ts
+│   ├── commentService.ts
+│   ├── clientService.ts
 │   ├── realtimeService.ts
+│   ├── topicService.ts
 │   └── useService.ts
 ├── stores/                     # Zustand 전역 상태 (인증)
 ├── types/                      # 타입 정의
@@ -182,7 +187,10 @@ topic (1) ─── (N) topic_likes
 - **SSR 적용**: 메인 피드 첫 12개를 서버에서 렌더해 초기 로딩 속도 개선
 - **Supabase 클라이언트 분리**: 서버 전용(`createServerClient`) / 클라이언트 전용(`createBrowserClient`) 명확히 구분
 - **`unstable_cache` 도입**: 반복 DB 쿼리를 서버에서 캐싱, On-Demand Revalidation으로 즉시 갱신
-- **`useSearchParams` Suspense 처리**: Next.js 14+ 빌드 에러 대응
+- **CRUD 아키텍처 재구성 (Read/Write 분리)**:  
+`Services (Read)`: 데이터 조회 로직을 서버/클라이언트 모두에서 사용할 수 있는 순수 함수 계층으로 격리하여 캐싱 효율화   
+`Server Actions (Write/Auth)`: 데이터 변경(CUD) 및 인증 로직을 서버 액션으로 분리하여 단일 진실 공급원(Single Source of Truth) 유지 및 보안 정책 강화
+- **`useSearchParams` Suspense 처리**: Next.js 빌드 에러 대응
 
 ---
 
