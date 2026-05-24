@@ -111,7 +111,7 @@ export function AppDraftsDialog({ children }: { children: React.ReactNode }) {
   const handleNavigate = useCallback(
     (id: number) => {
       setOpen(false);
-      router.push(`/topics/create/${id}`);
+      router.push(`/topics/create?id=${id}`);
     },
     [router]
   );
@@ -169,8 +169,8 @@ export function AppDraftsDialog({ children }: { children: React.ReactNode }) {
           {children}
           {drafts.length > 0 && (
             <span className="absolute -top-1 left-8 flex h-5 w-5 z-50">
-              <span className="animate-ping absolute h-full w-full rounded-full bg-red-500 opacity-30"></span>
-              <span className="relative rounded-full h-5 w-5 bg-red-500 border-2 border-zinc-950 text-[9px] font-black text-black flex items-center justify-center">
+              <span className="animate-ping absolute h-full w-full rounded-full bg-red-400 opacity-30"></span>
+              <span className="relative rounded-full h-5 w-5 bg-red-400 border-2 border-zinc-950 text-[9px] font-black text-black flex items-center justify-center">
                 {drafts.length > 9 ? '9+' : drafts.length}
               </span>
             </span>
