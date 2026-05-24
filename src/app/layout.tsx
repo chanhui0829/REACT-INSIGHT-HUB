@@ -17,15 +17,11 @@ import { Providers } from '@/components/providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Insight Hub - 개발자를 위한 인사이트 공유 플랫폼',
-  description: '개발자들이 서로의 인사이트를 공유하고 성장하는 플랫폼',
+  title: 'Insight Hub',
+  description: '서로의 인사이트를 공유하고 성장하는 플랫폼',
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
 
   return (

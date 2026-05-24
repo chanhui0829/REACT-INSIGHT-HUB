@@ -6,9 +6,10 @@
 import { Sparkles, Search, NotebookPen, PencilLine } from 'lucide-react';
 import Link from 'next/link';
 import { getCachedTopics } from '@/services/topicService';
-import { TopicList } from '@/components/topics';
+import { SortSelect, TopicList } from '@/components/topics';
 import { AppDraftsDialog } from '@/components/common';
 import { Button, Input } from '@/components/ui';
+import { CLASS_CATEGORY } from '@/constants/category.constant';
 
 export default async function HomePage({
   searchParams,
@@ -34,7 +35,6 @@ export default async function HomePage({
 
   return (
     <main className="w-full flex flex-col items-start mt-28 px-4 md:px-6 max-w-[1400px] mx-auto mb-32">
-      {/* ... 기존 로직 그대로 ... */}
       <div className="fixed left-1/2 bottom-8 -translate-x-1/2 z-50">
         <div className="flex items-center gap-2 p-2.5 rounded-full bg-slate-950/90 backdrop-blur-md border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <Link href="/topics/create">
@@ -89,8 +89,33 @@ export default async function HomePage({
               </Button>
             </form>
           </div>
-        </div>
+          {/* Category Tabs */}
+          <div className="w-full overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+            <div className="flex items-center gap-2 min-w-max md:justify-center">
+              {CLASS_CATEGORY.map((cat) => (
+                <Link
+                  key={cat.id}
+                  href={`/?category=${cat.category}&sort=${sortOption}`}
+                  className={`
+                    px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all duration-300
+                    ${
+                      category === cat.category
+                        ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/25'
+                        : 'bg-slate-900/50 text-slate-400 border border-white/10 hover:border-white/20 hover:text-slate-200'
+                    }
+                  `}
+                >
+                  {cat.label}
+                </Link>
+              ))}
+            </div>
+          </div>
 
+          {/* Sort Options */}
+          <div className="flex justify-end items-center gap-3 w-full">
+            <SortSelect />
+          </div>
+        </div>
         {topics.length === 0 ? (
           <div className="py-20 text-center">
             <p className="text-slate-400">검색 결과가 없습니다.</p>
