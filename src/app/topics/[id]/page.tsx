@@ -67,38 +67,25 @@ const parseEditorContent = (raw: string | Block[] | null | undefined): Block[] =
 
 export default function TopicDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params);
-
   const topicId = Number(id);
-
   const router = useRouter();
-
   const user = useAuthStore((state) => state.user);
 
-  // 토픽 상세 데이터
+  // 토픽 상세 데이터, 좋아요 목록
   const { data: topic, isLoading } = useTopicDetail(topicId);
-
-  // 좋아요 목록
   const { data: likesData } = useTopicLikes(topicId);
 
-  // 조회수 증가 mutation
+  // 조회수 증가, 좋아요, 토픽 삭제 mutation
   const increaseViews = useIncreaseViews(topicId);
-
-  // 좋아요 토글 mutation
   const toggleLike = useToggleLike(topicId, user?.id);
-
-  // 삭제 mutation
   const deleteMutation = useDeleteTopic(topicId);
 
-  // 댓글 realtime 핸들러
+  // 댓글,좋아요 realtime 핸들러
   const { handleCommentInsert, handleCommentDelete } = useCommentRealtimeHandlers(topicId);
-
-  // 좋아요 realtime 핸들러
   const { handleLikeInsert, handleLikeDelete } = useTopicRealtimeHandlers(topicId);
 
-  // 작성자 닉네임
   const [authorNickname, setAuthorNickname] = useState('알 수 없는 사용자');
 
-  // React StrictMode 중복 조회 방지
   const viewedRef = useRef(false);
 
   /**

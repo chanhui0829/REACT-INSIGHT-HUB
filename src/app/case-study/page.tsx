@@ -1,25 +1,23 @@
 /**
  * @file page.tsx
  * @description 케이스 스터디 페이지입니다.
- * 프로젝트에 대한 상세 정보를 보여줍니다.
  */
 
 'use client';
 
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
-
 import { useMemo } from 'react';
 import {
   ShieldAlert,
   Zap,
-  Cpu,
   CheckCircle2,
   Code2,
   Database,
   Boxes,
   MousePointer2,
   Wind,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 const STAGGER: Variants = {
@@ -33,8 +31,8 @@ const ITEM_UP: Variants = {
 };
 
 const SectionTitle = ({ children }: { children: React.ReactNode }) => (
-  <h2 className="text-xs font-black text-indigo-400 tracking-[0.4em] uppercase mb-12 flex items-center gap-3">
-    <div className="w-8 h-px bg-indigo-400" />
+  <h2 className="text-sm font-black text-indigo-400 tracking-[0.4em] uppercase mb-12 flex items-center gap-4">
+    <div className="w-12 h-px bg-indigo-400" />
     {children}
   </h2>
 );
@@ -42,42 +40,38 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
 export default function CaseStudyPage() {
   const techStack = useMemo(
     () => [
-      { icon: <Code2 size={20} />, name: 'React' },
-      { icon: <Boxes size={20} />, name: 'Zustand' },
-      { icon: <Database size={20} />, name: 'Supabase' },
-      { icon: <Boxes size={20} />, name: 'React Query' },
-      { icon: <Wind size={20} />, name: 'Tailwind' },
+      { icon: <Code2 size={24} />, name: 'Next.js 15+' },
+      { icon: <Boxes size={24} />, name: 'TanStack Query' },
+      { icon: <Database size={24} />, name: 'Supabase' },
+      { icon: <Boxes size={24} />, name: 'Zustand' },
+      { icon: <Wind size={24} />, name: 'Tailwind CSS' },
     ],
     []
   );
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-400 pb-60 selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-slate-950 text-slate-300 pb-60 selection:bg-indigo-500/30">
       <main className="mx-auto max-w-[1400px] px-8 pt-40">
-        {/* 🟢 1. PROJECT HERO & TECH STACK (일자 배치) */}
+        {/* 1. PROJECT HERO */}
         <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-52">
           <div className="flex flex-col gap-16">
             <div>
               <h1 className="text-[13vw] md:text-[140px] font-black text-white leading-[0.8] tracking-[-0.05em] italic">
                 INSIGHT <br /> <span className="text-indigo-400">HUB.</span>
               </h1>
-              <p className="mt-10 text-2xl text-zinc-500 font-bold max-w-2xl">
-                지식의 파편을 연결하는 아카이브 <br />
-                <span className="text-zinc-300">Architecture & Performance Case Study</span>
+              <p className="mt-12 text-3xl text-zinc-400 font-bold max-w-3xl leading-relaxed">
+                토픽 기반의 인사이트를 공유하는 미니 블로그 플랫폼 <br />
+                <span className="text-zinc-100">사용자 경험과 데이터 관리 중심의 설계 사례</span>
               </p>
             </div>
-
-            {/* 기술 스택 5종 일자 배치 로우 */}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-4">
               {techStack.map((tech) => (
                 <div
                   key={tech.name}
-                  className="flex items-center gap-3 px-5 py-3 rounded-xl bg-slate-900/50 border border-white/10 group hover:border-indigo-500/40 transition-all duration-300"
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-slate-900/50 border border-white/10"
                 >
-                  <div className="text-indigo-400 group-hover:scale-110 transition-transform">
-                    {tech.icon}
-                  </div>
-                  <span className="text-white font-black text-xs uppercase tracking-wider">
+                  <div className="text-indigo-400">{tech.icon}</div>
+                  <span className="text-white font-black text-sm uppercase tracking-wider">
                     {tech.name}
                   </span>
                 </div>
@@ -91,153 +85,122 @@ export default function CaseStudyPage() {
           initial="hidden"
           whileInView="show"
           viewport={{ once: true }}
-          className="space-y-44"
+          className="space-y-48"
         >
-          {/* 🔴 2. MAIN CHALLENGE & SOLUTION (초록색 호버 효과) */}
+          {/* 2. CHALLENGE */}
           <motion.section variants={ITEM_UP}>
-            <SectionTitle>Main Challenge & Solution</SectionTitle>
-            <div className="group relative p-14 rounded-[4rem] bg-slate-900/20 border border-white/5 overflow-hidden transition-all duration-700 hover:border-indigo-500/50 hover:bg-indigo-500/5">
+            <SectionTitle>Challenge & Architecture</SectionTitle>
+            <div className="group relative p-20 rounded-[4rem] bg-slate-900/20 border border-white/5 overflow-hidden">
               <div className="grid md:grid-cols-2 gap-20 relative z-10">
-                <div className="space-y-8">
+                <div className="space-y-10">
                   <div className="flex items-center gap-3 text-rose-500">
-                    <ShieldAlert size={24} />
-                    <span className="font-black tracking-[0.2em] uppercase text-[10px]">
-                      Critical Problem
+                    <ShieldAlert size={28} />
+                    <span className="font-black tracking-[0.2em] uppercase text-xs">
+                      Technical Obstacle
                     </span>
                   </div>
-                  <h3 className="text-5xl font-black text-white tracking-tighter leading-tight">
-                    강하게 결합된 <br />
-                    로직의 파편화.
+                  <h3 className="text-6xl font-black text-white tracking-tighter leading-tight">
+                    기록의 흐름을 <br /> 자연스럽게 유지하기.
                   </h3>
-                  <p className="text-xl font-medium text-zinc-500 leading-relaxed">
-                    데이터 요청 로직이 UI 컴포넌트와 뒤섞여 유지보수가 불가능한 상태였습니다. 코드의{' '}
-                    <span className="text-zinc-200">순수성</span>을 되찾기 위한 구조적 개선을
-                    단행했습니다.
+                  <p className="text-2xl font-medium text-zinc-400 leading-relaxed">
+                    사용자가 글을 쓰거나 좋아요를 누를 때, 서버 응답을 기다리느라 화면이 멈추는
+                    느낌이 들지 않도록 <strong>사용자 중심의 반응성</strong>을 확보하는 데
+                    집중했습니다.
                   </p>
                 </div>
-                <div className="flex flex-col justify-center space-y-5">
-                  <div className="flex items-center gap-3 text-indigo-400 mb-2">
-                    <MousePointer2 size={18} className="animate-bounce" />
-                    <span className="font-black text-[10px] uppercase tracking-[0.2em]">
-                      Resolution
-                    </span>
+                <div className="flex flex-col justify-center space-y-4">
+                  <div className="flex items-center gap-3 text-indigo-400 mb-8">
+                    <MousePointer2 size={20} className="animate-bounce" />
+                    <span className="font-black text-xs uppercase tracking-[0.2em]">Solution</span>
                   </div>
                   {[
-                    'Service Layer를 통한 API 추상화',
-                    'Custom Hooks 기반 비즈니스 로직 분리',
-                    '상태 관리 도구의 선언적 활용',
+                    {
+                      title: '반응형 UI 설계',
+                      desc: '상태 변화 시 즉각적으로 피드백을 보여주는 낙관적 업데이트 적용',
+                    },
+                    {
+                      title: '컴포넌트 분리',
+                      desc: '기능 단위로 컴포넌트를 설계하여 유지보수 용이성 확보',
+                    },
+                    {
+                      title: '데이터 관리',
+                      desc: '복잡한 비동기 상태를 TanStack Query로 체계적으로 관리',
+                    },
                   ].map((sol) => (
                     <div
-                      key={sol}
-                      className="flex items-center gap-4 p-5 rounded-4xl bg-black/40 border border-white/5 group-hover:border-indigo-500/20 transition-all"
+                      key={sol.title}
+                      className="flex items-start gap-6 p-4 rounded-3xl bg-black/40 border border-white/5"
                     >
-                      <CheckCircle2 size={18} className="text-indigo-400" />
-                      <span className="text-zinc-300 font-bold text-base">{sol}</span>
+                      <CheckCircle2 size={24} className="text-indigo-400 shrink-0 mt-1" />
+                      <div>
+                        <div className="text-xl text-white font-bold mb-1">{sol.title}</div>
+                        <div className="text-lg text-zinc-400">{sol.desc}</div>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
             </div>
           </motion.section>
 
-          {/* 🟣 3. TROUBLE SHOOTING (번개 아이콘 옆 표기) */}
+          {/* 3. TROUBLE SHOOTING */}
           <motion.section variants={ITEM_UP}>
             <SectionTitle>Deep Troubleshooting</SectionTitle>
-            <div className="p-16 rounded-[5rem] bg-zinc-900/30 border border-white/5">
-              <div className="flex flex-col md:flex-row items-center gap-8 mb-16">
-                <div className="w-20 h-20 bg-purple-600/20 rounded-4xl flex items-center justify-center text-purple-400">
-                  <Zap size={36} fill="currentColor" />
+            <div className="grid md:grid-cols-2 gap-10">
+              <div className="p-12 rounded-[3rem] bg-zinc-900/30 border border-white/5 space-y-8">
+                <div className="w-20 h-20 bg-purple-600/20 rounded-[2rem] flex items-center justify-center text-purple-400">
+                  <Zap size={32} />
                 </div>
-                <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase">
-                  Trouble Shooting
-                </h3>
+                <h4 className="text-3xl font-black text-white">데이터 동기화 이슈</h4>
+                <p className="text-xl text-zinc-400 leading-relaxed">
+                  좋아요 버튼 클릭 시 서버 통신 간에 UI가 초기화되는 현상을 발견했습니다. 낙관적
+                  업데이트 로직에서 이전 상태를 안전하게 보존하고, 통신 완료 후 자연스럽게 데이터를
+                  갱신하도록 처리했습니다.
+                </p>
               </div>
-
-              <div className="grid md:grid-cols-2 gap-16 items-start">
-                <div className="space-y-6">
-                  <h4 className="text-2xl font-black text-zinc-200">
-                    낙관적 업데이트를 통한 UX 임계점 돌파
-                  </h4>
-                  <p className="text-lg text-zinc-500 leading-relaxed font-medium">
-                    네트워크 응답 대기 시간을 기술적으로 제거하여 사용자에게 네이티브 앱과 같은
-                    즉각적인 경험을 제공하는 데 주력했습니다.
-                  </p>
+              <div className="p-12 rounded-[3rem] bg-zinc-900/30 border border-white/5 space-y-8">
+                <div className="w-20 h-20 bg-blue-600/20 rounded-[2rem] flex items-center justify-center text-blue-400">
+                  <ImageIcon size={32} />
                 </div>
-                <div className="p-10 rounded-[3rem] bg-purple-600/5 border border-purple-500/10">
-                  <p className="text-[10px] font-black text-purple-400 uppercase tracking-[0.3em] mb-6">
-                    Technical Fix
-                  </p>
-                  <p className="text-zinc-300 font-bold leading-relaxed italic">
-                    "Race Condition 방지를 위한 쿼리 취소 로직과 에러 롤백 시스템을 구축하여 데이터
-                    무결성을 유지하며 0ms의 피드백 속도를 구현했습니다."
-                  </p>
-                </div>
+                <h4 className="text-3xl font-black text-white">이미지 최적화 경험</h4>
+                <p className="text-xl text-zinc-400 leading-relaxed">
+                  다양한 썸네일 이미지가 로드될 때 페이지 성능이 저하되는 것을 막기 위해 Next.js의
+                  Image 컴포넌트를 활용했습니다. 레이아웃 시프트(CLS)를 방지하고 최적화된 포맷으로
+                  전달하는 과정을 경험했습니다.
+                </p>
               </div>
             </div>
           </motion.section>
 
-          {/* 🔵 4. TECH DECISIONS (Zustand & Tailwind 의사결정) */}
+          {/* 4. PERFORMANCE & GROWTH */}
           <motion.section variants={ITEM_UP}>
-            <SectionTitle>Technical Decisions</SectionTitle>
-            <div className="grid md:grid-cols-3 gap-8">
-              {[
-                {
-                  title: 'Zustand',
-                  detail:
-                    'Flux 패턴을 단순화하여 보일러플레이트를 줄이고, 스토어 접근성을 높여 개발 속도를 2배 이상 단축했습니다.',
-                  icon: <Boxes />,
-                },
-                {
-                  title: 'Tailwind CSS',
-                  detail:
-                    '디자인 시스템의 파편화를 방지하고, CSS 파일 크기 최소화 및 일관된 UI 구현을 위해 채택했습니다.',
-                  icon: <Wind />,
-                },
-                {
-                  title: 'React Query',
-                  detail:
-                    '비동기 상태의 복잡성을 선언적으로 관리하여 서버 데이터 동기화 로직의 신뢰성을 확보했습니다.',
-                  icon: <Cpu />,
-                },
-              ].map((tech) => (
-                <div
-                  key={tech.title}
-                  className="p-12 rounded-[3.5rem] bg-slate-900 border border-white/5 hover:border-slate-700 transition-all group"
-                >
-                  <div className="text-indigo-400 mb-10 group-hover:scale-110 transition-transform origin-left">
-                    {tech.icon}
-                  </div>
-                  <h4 className="text-white font-black text-xl mb-4 tracking-tight italic underline decoration-indigo-500/30 decoration-2 underline-offset-8">
-                    {tech.title}
-                  </h4>
-                  <p className="text-zinc-500 font-bold leading-relaxed text-sm">{tech.detail}</p>
-                </div>
-              ))}
-            </div>
-          </motion.section>
-
-          {/* 🏁 5. LEARNING & GROWTH */}
-          <motion.section variants={ITEM_UP}>
-            <SectionTitle>Learning & Growth</SectionTitle>
-            <div className="grid md:grid-cols-12 gap-8">
-              <div className="md:col-span-7 p-14 rounded-[4rem] bg-indigo-500 text-black">
-                <h3 className="text-4xl font-black mb-8 tracking-tighter italic leading-none">
-                  Engineering <br /> Mindset
+            <SectionTitle>Performance & Growth</SectionTitle>
+            <div className="grid md:grid-cols-2 gap-10">
+              <div className="p-16 rounded-[4rem] bg-indigo-500 text-black">
+                <h3 className="text-5xl font-black mb-10 tracking-tighter italic leading-none">
+                  사용자 경험(UX) <br /> 개선에 집중
                 </h3>
-                <p className="text-xl font-bold leading-relaxed opacity-90">
-                  단순 구현보다 "왜?"라는 질문에 집중하며 아키텍처를 설계하는 법을 배웠습니다.
-                  유지보수 가능한 코드가 팀에 기여하는 가치를 몸소 체험했습니다.
+                <p className="text-2xl font-bold opacity-90 leading-relaxed">
+                  기술 자체보다, 어떻게 하면 사용자가 더 편안하게 자신의 인사이트를 기록할 수
+                  있을지에 집중했습니다. 닉네임 설정이나 임시 저장 기능처럼,{' '}
+                  <strong>사용자의 고민을 덜어주는 인터페이스</strong>를 만드는 과정이 즐거웠습니다.
                 </p>
               </div>
-              <div className="md:col-span-5 p-14 rounded-[4rem] bg-zinc-900 border border-white/5 flex flex-col justify-end">
-                <h3 className="text-2xl font-black text-white mb-6 tracking-tighter italic">
-                  UX Reflection
+              <div className="p-16 rounded-[4rem] bg-zinc-900 border border-white/5 flex flex-col justify-center">
+                <h3 className="text-4xl font-black text-white mb-10 tracking-tighter italic">
+                  성장한 점
                 </h3>
-                <p className="text-lg font-bold leading-relaxed text-zinc-500">
-                  기술은 결국 사람을 향해야 함을 느꼈습니다. 성능 최적화가 유저의 신뢰로 이어지는
-                  과정을 직접 목격했습니다.
-                </p>
+                <ul className="space-y-6 text-zinc-300 font-bold text-xl">
+                  <li className="flex items-center gap-3">
+                    <span>•</span> 사용자 중심의 UI/UX 설계를 통한 편의성 개선
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span>•</span> 비동기 데이터 처리를 통한 부드러운 앱 경험 구현
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <span>•</span> 컴포넌트 재사용성을 고려한 코드 구조 설계 경험
+                  </li>
+                </ul>
               </div>
             </div>
           </motion.section>
