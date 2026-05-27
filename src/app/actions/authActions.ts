@@ -5,7 +5,7 @@
 'use server';
 
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { revalidatePath } from 'next/cache';
+import { revalidateTag } from 'next/cache';
 
 // 이메일 로그인
 export const signInWithEmail = async (email: string, password: string) => {
@@ -32,7 +32,7 @@ export const signOut = async () => {
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
-  revalidatePath('/');
+  revalidateTag('/');
 };
 
 // 약관 동의 업데이트

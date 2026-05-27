@@ -185,7 +185,7 @@ function AppHeader({ user: serverUser }: AppHeaderProps) {
 
       {/* 모바일 슬라이딩 메뉴 */}
       <div
-        className={`fixed inset-0 z-40 md:hidden transition-all duration-300 ${
+        className={`fixed inset-0 z-60 md:hidden transition-all duration-300 ${
           isOpen ? 'visible' : 'invisible'
         }`}
       >

@@ -5,7 +5,7 @@
 'use server';
 
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { revalidatePath } from 'next/cache';
+import { revalidateTag } from 'next/cache';
 
 // 댓글 추가
 export const addComment = async (topicId: number, text: string) => {
@@ -27,7 +27,7 @@ export const addComment = async (topicId: number, text: string) => {
 
   if (error) throw error;
 
-  revalidatePath(`/topics/${topicId}`);
+  revalidateTag(`/topics/${topicId}`);
   return { ...data, email: user.email };
 };
 
@@ -37,5 +37,5 @@ export const deleteComment = async (commentId: number, topicId: number) => {
   const { error } = await supabase.from('comment').delete().eq('id', commentId);
   if (error) throw error;
 
-  revalidatePath(`/topics/${topicId}`);
+  revalidateTag(`/topics/${topicId}`);
 };
