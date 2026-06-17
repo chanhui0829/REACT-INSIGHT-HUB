@@ -67,11 +67,11 @@ const TopicCardComponent = ({ topic, authorNickname }: Props) => {
     <Link href={`/topics/${topic.id}`}>
       <Card
         className="
-          group relative w-full overflow-hidden cursor-pointer
-          bg-slate-900 border-white/5 rounded-[20px] sm:rounded-[24px] md:rounded-[32px]
-          hover:shadow-[0_20px_40px_rgba(99,102,241,0.15)]
-          transition-all duration-500 transform hover:scale-[1.02]
-          animate-fade-in-up flex flex-row sm:flex-col sm:aspect-4/5 md:aspect-4/5 lg:aspect-4/5
+            group relative w-full overflow-hidden cursor-pointer
+           bg-slate-900 border-white/5 rounded-[20px] sm:rounded-[24px] md:rounded-[32px]
+            hover:shadow-[0_20px_40px_rgba(99,102,241,0.15)]
+            transition-transform duration-500 hover:scale-[1.02]
+            flex flex-row sm:flex-col sm:aspect-4/5 md:aspect-4/5 lg:aspect-4/5
         "
       >
         {/* Image Section */}
@@ -85,7 +85,7 @@ const TopicCardComponent = ({ topic, authorNickname }: Props) => {
           />
           {/* Category Badge */}
           <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
-            <div className="flex items-center gap-1 px-1.5 py-1 sm:px-2 sm:py-1 rounded-full bg-slate-950/80 backdrop-blur-md border border-white/10">
+            <div className="flex items-center gap-1 px-1.5 py-1 sm:px-2 sm:py-1 rounded-full bg-slate-950/90 border border-white/10">
               <Layers size={8} className="text-indigo-400 sm:w-[9px] sm:h-[9px]" />
               <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest text-indigo-400">
                 {topic.category}

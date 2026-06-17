@@ -79,7 +79,7 @@ function AppHeader({ user: serverUser }: AppHeaderProps) {
   return (
     <>
       <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-[1400px] px-6">
-        <div className="mx-auto flex h-14 items-center justify-between rounded-full bg-slate-950/70 backdrop-blur-md border border-white/10 shadow-2xl px-6">
+        <div className="mx-auto flex h-14 items-center justify-between rounded-full bg-slate-950/95 border border-white/10 shadow-2xl px-6">
           {/* 로고 */}
           <Link
             href="/"
@@ -190,7 +190,7 @@ function AppHeader({ user: serverUser }: AppHeaderProps) {
         }`}
       >
         <div
-          className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${
+          className={`absolute inset-0 bg-black/90 transition-opacity duration-300 ${
             isOpen ? 'opacity-100' : 'opacity-0'
           }`}
           onClick={closeMenu}

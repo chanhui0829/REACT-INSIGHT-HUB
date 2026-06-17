@@ -42,7 +42,13 @@ export function AppFooter() {
   return (
     <footer className="relative bg-slate-950 border-t border-white/5 pt-16 pb-10 overflow-hidden">
       {/* Background Decorative Element */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 blur-[150px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      <div
+        className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(circle, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.08) 40%, transparent 70%)',
+        }}
+      />
 
       <div className="max-w-[1400px] mx-auto px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-8 mb-12">
