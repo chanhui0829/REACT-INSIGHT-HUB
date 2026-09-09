@@ -69,7 +69,8 @@ function AppHeader({ user: serverUser }: AppHeaderProps) {
   const navLinks = useMemo(
     () => [
       { label: '토픽 탐색', to: '/', icon: <LayoutGrid size={18} /> },
-      
+            ],
+          []
   );
 
   return (
