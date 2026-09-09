@@ -6,14 +6,12 @@
 
 'use client';
 
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import {
   Menu,
   X,
   LogOut,
-  LayoutGrid,
   ChevronDown,
   User as UserIcon,
   Settings,
@@ -43,7 +41,6 @@ interface AppHeaderProps {
 }
 
 function AppHeader({ user: serverUser }: AppHeaderProps) {
-  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const storeUser = useAuthStore((state) => state.user);
   const setStoreUser = useAuthStore((state) => state.setUser);
@@ -66,13 +63,6 @@ function AppHeader({ user: serverUser }: AppHeaderProps) {
   const toggleMenu = () => setIsOpen((prev) => !prev);
   const closeMenu = () => setIsOpen(false);
 
-  const navLinks = useMemo(
-    () => [
-      { label: '토픽 탐색', to: '/', icon: <LayoutGrid size={18} /> },
-            ],
-          []
-  );
-
   return (
     <>
       <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-[1400px] px-6">
@@ -87,23 +77,6 @@ function AppHeader({ user: serverUser }: AppHeaderProps) {
               Insight<span className="text-indigo-400">Hub</span>
             </span>
           </Link>
-
-          {/* PC 메뉴 */}
-          <nav className="hidden md:flex items-center gap-6">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                href={link.to}
-                className={`
-                  flex items-center gap-2 text-[13px] font-black transition-all duration-200 tracking-tight
-                  ${pathname === link.to ? 'text-indigo-400' : 'text-slate-400 hover:text-white'}
-                `}
-              >
-                {link.icon}
-                {link.label}
-              </Link>
-            ))}
-          </nav>
 
           {/* PC 사용자 메뉴 */}
           <div className="hidden md:flex items-center gap-4">
@@ -208,23 +181,6 @@ function AppHeader({ user: serverUser }: AppHeaderProps) {
             >
               <X size={24} />
             </button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto scrollbar-hide">
-            {/* 퀵 링크 */}
-            <div className="flex flex-col gap-2 mb-8">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  href={link.to}
-                  onClick={closeMenu}
-                  className="flex items-center gap-3 w-full p-4 rounded-2xl bg-white/5 border border-white/10 text-slate-300 font-bold hover:bg-white/10 hover:text-white transition-all text-sm"
-                >
-                  {link.icon}
-                  {link.label}
-                </Link>
-              ))}
-            </div>
           </div>
 
           {/* 하단 사용자 계정 정보 */}
