@@ -15,7 +15,6 @@ const FOOTER_NAV_DATA = [
     title: 'Platform',
     links: [
       { label: 'Explorer', to: '/' },
-      { label: 'Case Study', to: '/case-study' },
       { label: 'Tech Stack', to: '/' },
     ],
   },
