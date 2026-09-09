@@ -14,7 +14,6 @@ import {
   X,
   LogOut,
   LayoutGrid,
-  BookText,
   ChevronDown,
   User as UserIcon,
   Settings,
@@ -67,13 +66,10 @@ function AppHeader({ user: serverUser }: AppHeaderProps) {
   const toggleMenu = () => setIsOpen((prev) => !prev);
   const closeMenu = () => setIsOpen(false);
 
-  // 네비게이션 메뉴 (Case-Study 영문 적용)
   const navLinks = useMemo(
     () => [
       { label: '토픽 탐색', to: '/', icon: <LayoutGrid size={18} /> },
-      { label: 'Case-Study', to: '/case-study', icon: <BookText size={18} /> },
-    ],
-    []
+      
   );
 
   return (
