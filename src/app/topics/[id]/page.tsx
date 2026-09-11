@@ -11,8 +11,13 @@ import { useEffect, useCallback, useMemo, useState, useRef } from 'react';
 
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
+import { Archivo } from 'next/font/google';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
+
+// 댓글 영역 상단의 "Community" 레이블 전용 서체 — 이탤릭 세리프 대신
+// 곧고 각진 굵은 그로테스크로, 라벨 하나에만 포인트를 줌
+const communityLabelFont = Archivo({ subsets: ['latin'], weight: '800' });
 
 import { ArrowLeft, Eye, Heart, Calendar, Share2, User } from 'lucide-react';
 
@@ -181,7 +186,7 @@ export default function TopicDetailPage({ params }: { params: Promise<{ id: stri
    */
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-zinc-500 font-bold">
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-500 font-bold">
         로딩 중...
       </div>
     );
@@ -192,14 +197,14 @@ export default function TopicDetailPage({ params }: { params: Promise<{ id: stri
    */
   if (!topic) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-zinc-500 font-bold">
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-500 font-bold">
         데이터를 찾을 수 없습니다.
       </div>
     );
   }
 
   return (
-    <main className="relative w-full min-h-screen bg-[#0a0a0a] text-zinc-100 pt-[66px] overflow-x-hidden">
+    <main className="relative w-full min-h-screen bg-slate-900 text-slate-100 pt-[66px] overflow-x-hidden">
       {/* 상단 커버 영역 */}
       <header className="relative w-full h-[400px] md:h-[450px] overflow-hidden">
         {/* 썸네일 */}
@@ -214,7 +219,7 @@ export default function TopicDetailPage({ params }: { params: Promise<{ id: stri
         <div className="absolute inset-0 bg-black/50" />
 
         {/* 하단 그라데이션 */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
 
         {/* 상단 네비게이션 */}
         <nav className="relative z-20 w-full max-w-7xl mx-auto px-6 pt-6 flex justify-between items-center">
@@ -259,7 +264,7 @@ export default function TopicDetailPage({ params }: { params: Promise<{ id: stri
           </h1>
 
           {/* 메타 정보 */}
-          <div className="flex items-center gap-5 mt-8 text-zinc-300 text-[11px] font-bold uppercase tracking-widest">
+          <div className="flex items-center gap-5 mt-8 text-slate-300 text-[11px] font-bold uppercase tracking-widest">
             {/* 작성자 */}
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
               <User size={13} className="text-indigo-400" />
@@ -280,9 +285,9 @@ export default function TopicDetailPage({ params }: { params: Promise<{ id: stri
       {/* 본문 */}
       <section className="w-full max-w-[1200px] mx-auto px-6 -mt-16 pb-32">
         {/* 콘텐츠 카드 */}
-        <article className="relative z-10 bg-[#121214] border border-white/5 rounded-[48px] py-10 md:p-10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)]">
+        <article className="relative z-10 bg-slate-800 border border-white/5 rounded-[48px] py-10 md:p-10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)]">
           {/* 에디터 콘텐츠 */}
-          <div className="prose prose-invert prose-emerald max-w-none min-h-[300px] leading-[1.9] text-zinc-300 text-[17px]">
+          <div className="prose prose-invert prose-emerald max-w-none min-h-[300px] leading-[1.9] text-slate-300 text-[17px]">
             <AppEditor value={parsedContent} readonly />
           </div>
 
@@ -290,7 +295,7 @@ export default function TopicDetailPage({ params }: { params: Promise<{ id: stri
           <div className="ml-10 mt-20 flex items-center justify-between">
             <div className="flex gap-3">
               {/* 조회수 */}
-              <div className="flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-zinc-900 text-zinc-400 border border-white/5 font-bold text-xs uppercase">
+              <div className="flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-slate-900 text-slate-400 border border-white/5 font-bold text-xs uppercase">
                 <Eye size={16} />
                 {topic?.views.toLocaleString()} VIEWS
               </div>
@@ -304,7 +309,7 @@ export default function TopicDetailPage({ params }: { params: Promise<{ id: stri
                 className={`flex items-center gap-2.5 px-7 py-3 rounded-2xl border transition-all duration-200 font-bold text-xs active:scale-95 ${
                   isLiked
                     ? 'bg-rose-500 border-rose-400 text-white shadow-lg'
-                    : 'bg-zinc-900 text-zinc-400 border-white/5 hover:border-zinc-700'
+                    : 'bg-slate-900 text-slate-400 border-white/5 hover:border-slate-700'
                 }`}
               >
                 <Heart
@@ -320,17 +325,16 @@ export default function TopicDetailPage({ params }: { params: Promise<{ id: stri
           </div>
         </article>
 
+        {/* "Community" 레이블 — 댓글 박스와 분리된, 그 자체로 독립된 섹션 헤더 */}
+        <div className="mt-24 px-2">
+          <span className={`${communityLabelFont.className} block text-2xl text-slate-200 tracking-wide uppercase`}>
+            Community
+          </span>
+        </div>
+
         {/* 댓글 영역 */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mt-24 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mt-6 items-start">
           <div className="lg:col-span-8">
-            {/* 섹션 헤더 */}
-            <div className="flex items-center gap-4 mb-12 px-2">
-              <h3 className="text-3xl font-black tracking-tighter italic">Discussions</h3>
-
-              <div className="h-px flex-1 bg-white/5" />
-            </div>
-
-            {/* 댓글 */}
             <div className="px-2">
               <CommentBox topicId={topicId} />
             </div>

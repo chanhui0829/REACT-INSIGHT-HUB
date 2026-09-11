@@ -7,11 +7,11 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import type { KeyboardEvent } from 'react';
-import { CircleUserRound, MessageSquareMore, Loader2 } from 'lucide-react';
+import { MessageSquareMore, Loader2, CircleUserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 
-import { Separator, Textarea, Button } from '@/components/ui';
+import { Textarea, Skeleton } from '@/components/ui';
 import { AppDeleteDialog } from '@/components/common';
 import { QUERY_KEYS } from '@/constants/querykey.constant';
 import { getUserNicknames } from '@/services/useService';
@@ -29,10 +29,34 @@ interface CommentBoxProps {
   topicId: number;
 }
 
+// 원형 사용자 아이콘 — 사용자별 색상 구분 없이 통일된 기본 아이콘
+function AvatarIcon({ size = 'size-9' }: { size?: string }) {
+  return (
+    <div
+      className={`shrink-0 ${size} rounded-2xl bg-white/[0.04] ring-1 ring-white/10 flex items-center justify-center`}
+    >
+      <CircleUserRound className="size-[58%] text-slate-500" strokeWidth={1.5} />
+    </div>
+  );
+}
+
+function CommentSkeleton() {
+  return (
+    <div className="flex gap-3 py-4">
+      <Skeleton className="size-9 rounded-2xl shrink-0 bg-white/5" />
+      <div className="flex-1 space-y-2 pt-0.5">
+        <Skeleton className="h-3 w-24 bg-white/5" />
+        <Skeleton className="h-3.5 w-4/5 bg-white/5" />
+      </div>
+    </div>
+  );
+}
+
 export function CommentBox({ topicId }: CommentBoxProps) {
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const newCommentRef = useRef<HTMLTextAreaElement | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [draftLength, setDraftLength] = useState(0);
 
   const { data: user } = useQuery({
     queryKey: QUERY_KEYS.user.me,
@@ -76,6 +100,7 @@ export function CommentBox({ topicId }: CommentBoxProps) {
       onSuccess: () => {
         toast.success('댓글이 등록되었습니다.');
         if (newCommentRef.current) newCommentRef.current.value = '';
+        setDraftLength(0);
         setIsSubmitting(false);
       },
       onError: () => {
@@ -110,108 +135,131 @@ export function CommentBox({ topicId }: CommentBoxProps) {
     };
   }, [observerCallback]);
 
+  const hasDraft = draftLength > 0;
+
   return (
-    <section className="w-full max-w-4xl mx-auto space-y-8 pb-20">
-      <div className="flex items-center gap-3 px-1">
-        <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-          <MessageSquareMore className="size-5 text-indigo-400" />
-        </div>
-        <h3 className="font-bold text-xl tracking-tight flex items-center gap-2 text-slate-100">
-          댓글
-          <span className="text-indigo-400 text-sm font-bold bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
-            {totalCount}
-          </span>
-        </h3>
+    <section className="w-full max-w-4xl mx-auto pb-4">
+      {/* 댓글 개수 라벨 */}
+      <div className="flex items-center gap-1.5 mb-6 text-slate-500">
+        <MessageSquareMore className="size-3.5 text-indigo-400/80" />
+        <span className="text-xs font-bold tabular-nums">댓글 {totalCount}개</span>
       </div>
 
-      <div className="relative bg-slate-900/40 border border-white/10 rounded-2xl p-4 shadow-lg transition-all focus-within:border-indigo-500/30 focus-within:ring-1 focus-within:ring-indigo-500/10">
-        <Textarea
-          ref={newCommentRef}
-          onKeyDown={handleKeyDown}
-          placeholder="인사이트에 대한 의견을 자유롭게 남겨주세요..."
-          className="min-h-[80px] w-full bg-transparent text-slate-100 border-none rounded-xl focus-visible:ring-0 resize-none text-sm leading-relaxed placeholder:text-slate-500 p-2"
-        />
+      {/* 댓글 작성 폼 */}
+      <div className="flex gap-3 items-start mb-8">
+        <div className="hidden sm:block pt-0.5">
+          <AvatarIcon />
+        </div>
 
-        <div className="flex justify-end mt-3">
-          <Button
-            onClick={handleSubmit}
-            disabled={addCommentMutation.isPending}
-            className="h-9 px-5 bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-xs rounded-full transition-all shadow-md shadow-indigo-500/10 active:scale-95"
-          >
-            {addCommentMutation.isPending ? <Loader2 className="size-3.5 animate-spin" /> : '등록'}
-          </Button>
+        <div className="flex-1 min-w-0 bg-white/[0.08] border border-white/[0.14] rounded-2xl p-3.5 focus-within:border-indigo-400/40 transition-colors duration-200">
+          <Textarea
+            ref={newCommentRef}
+            onKeyDown={handleKeyDown}
+            onChange={(e) => setDraftLength(e.target.value.length)}
+            maxLength={500}
+            placeholder="인사이트에 대한 의견을 남겨주세요..."
+            className="min-h-[44px] w-full bg-transparent text-[14.5px] text-slate-100 border-none rounded-none focus-visible:ring-0 resize-none leading-relaxed placeholder:text-slate-400 p-0"
+          />
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+            <span className="text-[11px] font-medium text-slate-600 tabular-nums">{draftLength}/500</span>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={addCommentMutation.isPending}
+              className={`flex items-center gap-1.5 h-8 px-4 rounded-full font-bold text-xs transition-all duration-200 disabled:opacity-60 ${
+                hasDraft
+                  ? 'bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-950/40'
+                  : 'bg-white/[0.06] text-slate-500'
+              }`}
+            >
+              {addCommentMutation.isPending ? <Loader2 className="size-3.5 animate-spin" /> : '등록'}
+            </button>
+          </div>
         </div>
       </div>
 
-      <Separator className="bg-white/5" />
-
-      <div className="space-y-4">
-        {status === 'pending' ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="size-6 text-indigo-500/30 animate-spin" />
+      {/* 댓글 목록 */}
+      {status === 'pending' ? (
+        <div className="divide-y divide-white/[0.12]">
+          <CommentSkeleton />
+          <CommentSkeleton />
+        </div>
+      ) : comments.length === 0 ? (
+        <div className="flex items-center gap-3 py-10">
+          <div className="shrink-0 size-10 rounded-full border border-dashed border-white/10 flex items-center justify-center">
+            <MessageSquareMore className="size-4 text-slate-600" />
           </div>
-        ) : comments.length === 0 ? (
-          <div className="text-center py-16 bg-slate-900/20 rounded-2xl border border-dashed border-white/5">
-            <p className="text-slate-500 font-medium tracking-tight text-sm">
-              아직 등록된 댓글이 없습니다. 첫 의견의 주인공이 되어보세요! 🚀
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {comments.map((c) => {
-              const isOwner = c.user_id === user?.id;
+          <p className="text-slate-500 font-medium tracking-tight text-sm">
+            아직 등록된 댓글이 없습니다. 첫 의견의 주인공이 되어보세요! 🚀
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col divide-y divide-white/[0.12]">
+          {comments.map((c) => {
+            const isOwner = c.user_id === user?.id;
+            const nickname = nicknameMap[c.user_id] || '알 수 없는 사용자';
 
-              return (
-                <article
-                  key={c.id}
-                  className={`group relative p-4 rounded-2xl transition-all duration-300 ${
-                    isOwner
-                      ? 'bg-slate-900/50 border border-indigo-500/15'
-                      : 'bg-slate-900/30 border border-white/5 hover:border-white/10'
-                  }`}
-                >
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0 w-9 h-9 rounded-full bg-slate-800/50 border border-white/5 flex items-center justify-center">
-                      <CircleUserRound className="size-4 text-slate-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-bold text-slate-100 truncate">
-                          {nicknameMap[c.user_id] || '알 수 없는 사용자'}
-                        </span>
-                        {isOwner && (
-                          <span className="text-[10px] font-bold text-indigo-400 bg-indigo-400/10 px-1.5 py-0.5 rounded-md border border-indigo-400/20">
-                            작성자
-                          </span>
-                        )}
-                        <span className="text-xs text-slate-500">
-                          {dayjs(c.created_at).fromNow()}
-                        </span>
-                      </div>
-                      <p className="text-sm leading-[1.6] text-slate-300 whitespace-pre-wrap">
-                        {c.content}
-                      </p>
-                    </div>
+            return (
+              <article key={c.id} className="group relative flex gap-3 py-4">
+                <AvatarIcon />
+
+                <div className="flex-1 min-w-0 pr-8">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-[13.5px] font-bold text-slate-100 truncate">{nickname}</span>
                     {isOwner && (
-                      <div className="opacity-0 group-hover:opacity-100 transition-all">
-                        <AppDeleteDialog
-                          onConfirm={() => deleteCommentMutation.mutate(c.id)}
-                          title="의견 삭제"
-                          description="작성하신 댓글을 영구적으로 삭제하시겠습니까?"
-                        />
-                      </div>
+                      <span className="flex items-center gap-1 text-[11px] font-bold text-indigo-300">
+                        <span className="size-1 rounded-full bg-indigo-400" />
+                        작성자
+                      </span>
                     )}
+                    <span className="text-xs text-slate-600">·</span>
+                    <span className="text-xs text-slate-500">{dayjs(c.created_at).fromNow()}</span>
                   </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                  <p className="text-[14px] leading-[1.65] text-slate-300 whitespace-pre-wrap break-words">
+                    {c.content}
+                  </p>
+                </div>
+
+                {isOwner && (
+                  <div className="absolute right-0 top-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <AppDeleteDialog
+                      onConfirm={() => deleteCommentMutation.mutate(c.id)}
+                      title="의견 삭제"
+                      description="작성하신 댓글을 영구적으로 삭제하시겠습니까?"
+                      trigger={
+                        <button
+                          type="button"
+                          className="size-7 rounded-full flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          title="삭제"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            className="size-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z" />
+                          </svg>
+                        </button>
+                      }
+                    />
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      )}
 
       {hasNextPage && (
-        <div ref={loaderRef} className="flex justify-center pt-4">
-          <Loader2 className="size-5 text-indigo-500/30 animate-spin" />
+        <div ref={loaderRef} className="flex justify-center pt-5">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white/[0.03] px-4 py-1.5 rounded-full">
+            <Loader2 className="size-3.5 text-indigo-400 animate-spin" />
+            더 불러오는 중
+          </div>
         </div>
       )}
     </section>
