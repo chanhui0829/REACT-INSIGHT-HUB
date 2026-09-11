@@ -232,14 +232,26 @@ export const useToggleLike = (topicId: number, userId?: string) => {
       }
     },
 
+    // [Fix] "좋아요를 누르면 하트가 잠깐 채워졌다가 몇 초 뒤 다시 비워짐 / 연속으로
+    // 누르면 34→35→36(반대 방향)→34로 튐" 버그의 원인.
+    // - 하트 채움 여부(isLiked)는 likes.list 캐시에서 계산되는데, onMutate가 이미
+    //   본인의 좋아요를 정확히 add/remove로 반영해둔 상태임 — RPC(toggle_topic_like)는
+    //   서버가 실제 DB 행 존재 여부로 토글하므로 이 낙관적 반영은 항상 정답임.
+    // - 그런데 바로 다음 줄의 likes.list invalidate가 fetchTopicLikes()를 다시 실행시켜
+    //   방금 낙관적으로 넣은 본인 행을 "서버에서 다시 읽어온 값"으로 덮어씀. 이 재조회가
+    //   (fetchTopicLikes가 세션 없는 익명 supabase 클라이언트를 쓰고 있어 RLS 등의 영향을
+    //   받을 수 있음) 본인 행을 누락한 채로 돌아오면 isLiked가 다시 false로 리셋됨 →
+    //   하트가 꺼짐. 그 상태에서 또 클릭하면 isLiked=false로 잘못 계산돼 "취소" 대신
+    //   "추가"를 한 번 더 낙관적으로 반영(34→35에서 다시 +1 → 36)하는 반대 방향 버그가
+    //   발생 — 실제 서버는 진짜 DB 상태를 보고 정확히 토글하므로 이후 count invalidate로
+    //   34로 정정되며 "36에서 잠깐 멈췄다 34로 돌아가는" 현상으로 보였던 것.
+    // - likes.list는 오직 이 mutation의 onMutate/onError만 건드리므로(다른 곳에서 절대
+    //   수정 안 함) invalidate로 재조회할 필요가 없음 — 실패 시엔 onError가 이미 정확히
+    //   롤백함. count(topics.detail)만 서버 값으로 재동기화하면 충분하고, count는 실제로도
+    //   항상 정확한 값으로 정착했으므로 그대로 둔다.
     onSettled: () => {
-      // 서버 데이터 재동기화
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.topics.detail(topicId),
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.likes.list(topicId),
       });
     },
   });
