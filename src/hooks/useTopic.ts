@@ -254,21 +254,13 @@ export const useDeleteTopic = (topicId: number) => {
   return useMutation({
     mutationFn: () => deleteTopic(topicId),
 
+    // [Fix] 서버 액션 deleteTopic()이 이미 내부에서 revalidateTag('posts')를 호출해
+    // Next.js 캐시를 무효화함 — 클라이언트에서 /api/revalidate를 한 번 더 호출하는 건
+    // 완전히 같은 일을 중복 수행할 뿐이었음. 게다가 이 호출에 쓰던 인증 시크릿이
+    // NEXT_PUBLIC_ 접두사로 클라이언트 번들에 그대로 노출되어 있어서(누구나 devtools로
+    // 꺼내 /api/revalidate를 직접 호출 가능), 시크릿 검증 자체가 사실상 의미가 없었음.
+    // 서버 액션의 revalidateTag만으로 캐시 무효화는 충분하므로 중복 호출을 제거한다.
     onSuccess: async () => {
-      await fetch('/api/revalidate', {
-        method: 'POST',
-
-        headers: {
-          'Content-Type': 'application/json',
-
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_REVALIDATION_SECRET}`,
-        },
-
-        body: JSON.stringify({
-          tag: 'posts',
-        }),
-      });
-
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.topics.all,
       });
@@ -280,8 +272,16 @@ export const useDeleteTopic = (topicId: number) => {
  * realtime 좋아요 핸들러
  * 현재 좋아요는 optimistic update + invalidate 방식으로 처리하기 때문에
  * UI 충돌 방지를 위해 카운트 동기화만 유지합니다.
+ *
+ * [Fix] Realtime의 postgres_changes 구독은 이벤트를 발생시킨 당사자에게도 그대로
+ * 브로드캐스트된다(자기 자신을 걸러주지 않음). 그런데 본인이 좋아요를 누른 경우엔
+ * 이미 useToggleLike의 onMutate가 낙관적으로 +1/-1을 반영해둔 상태라, 그 직후 도착하는
+ * 본인 이벤트에 여기서 또 patchLikes를 호출하면 이중 카운트가 됨(다중 탭에서는 탭마다
+ * 다른 값으로 어긋날 수도 있음). currentUserId와 payload의 user_id를 비교해 본인이
+ * 발생시킨 이벤트는 조기 리턴하고, 다른 사용자가 발생시킨 이벤트만 반영한다 — 어차피
+ * 본인 쪽은 onSettled의 invalidateQueries가 최종적으로 서버 정확값을 다시 맞춰준다.
  */
-export const useTopicRealtimeHandlers = (topicId: number) => {
+export const useTopicRealtimeHandlers = (topicId: number, currentUserId?: string) => {
   const queryClient = useQueryClient();
 
   const patchLikes = useCallback(
@@ -308,9 +308,14 @@ export const useTopicRealtimeHandlers = (topicId: number) => {
         return;
       }
 
+      // 본인이 발생시킨 이벤트는 이미 낙관적 업데이트로 반영되어 있으므로 무시
+      if (currentUserId && String(inserted.user_id) === String(currentUserId)) {
+        return;
+      }
+
       patchLikes(1);
     },
-    [patchLikes]
+    [patchLikes, currentUserId]
   );
 
   const handleLikeDelete = useCallback(
@@ -321,9 +326,14 @@ export const useTopicRealtimeHandlers = (topicId: number) => {
         return;
       }
 
+      // 본인이 발생시킨 이벤트는 이미 낙관적 업데이트로 반영되어 있으므로 무시
+      if (currentUserId && String(deleted.user_id) === String(currentUserId)) {
+        return;
+      }
+
       patchLikes(-1);
     },
-    [patchLikes]
+    [patchLikes, currentUserId]
   );
 
   return {

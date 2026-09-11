@@ -134,10 +134,15 @@ export const useAddComment = (topicId: number) => {
       );
     },
 
+    // [Fix] useComments는 offset 기반(from/to range) useInfiniteQuery라, 여기서
+    // comments.list를 invalidate하면 이미 로드된 모든 페이지를 "원래의 고정 offset"으로
+    // 그대로 재요청함. 그런데 방금 onSuccess에서 새 댓글을 1페이지 맨 앞에 직접
+    // 삽입해서(또는 realtime의 handleCommentInsert가 동일하게) 목록이 이미 한 칸씩
+    // 밀린 상태 — 같은 offset으로 다시 조회하면 페이지 경계에서 항목이 중복되거나
+    // 누락되는 전형적인 offset-pagination 문제가 있었음. list 캐시는 이미 위
+    // upsertCommentToPages(성공 시) / realtime 구독(다른 사용자 작성분)으로 정확하게
+    // 유지되므로 list invalidate는 불필요 + 유해함 — 제거하고 count만 서버 값으로 재동기화.
     onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.comments.list(topicId),
-      });
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.comments.count(topicId),
       });
@@ -187,10 +192,11 @@ export const useDeleteComment = (topicId: number) => {
       }
     },
 
+    // [Fix] useAddComment와 동일한 이유로 list invalidate를 제거함 — onMutate에서 이미
+    // removeCommentFromPages로 해당 댓글을 낙관적으로 제거했고, 실패 시엔 onError가
+    // previousList로 정확히 롤백하므로 list를 다시 고정 offset으로 재조회할 필요가 없음
+    // (offset 페이지네이션 상태에서 invalidate하면 경계에서 항목이 중복/누락될 수 있었음).
     onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.comments.list(topicId),
-      });
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.comments.count(topicId),
       });

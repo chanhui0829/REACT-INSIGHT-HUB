@@ -57,21 +57,16 @@ export const usePublishTopic = () => {
       const thumbnailUrl = await uploadThumbnail(thumbnail);
       const payload = buildPayload(TOPIC_STATUS.PUBLISH, thumbnailUrl);
 
+      // [Fix] insertTopic/updateTopic 서버 액션이 내부에서 이미 revalidateTag('posts')를
+      // 호출해 캐시를 무효화하므로, 여기서 /api/revalidate를 한 번 더 호출하는 건 같은
+      // 무효화를 중복 수행하는 것이었음. 게다가 그 호출에 쓰던 인증 시크릿이
+      // NEXT_PUBLIC_ 접두사로 클라이언트 번들에 노출되어 있어 검증 의미가 없었음
+      // (누구나 devtools로 꺼내 /api/revalidate를 직접 호출 가능) — 중복 호출을 제거한다.
       if (!id) {
         await insertTopic(userId, payload);
       } else {
         await updateTopic(id as string, payload);
       }
-
-      // 발행 후 서버 캐시 즉시 무효화
-      await fetch('/api/revalidate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_REVALIDATION_SECRET}`,
-        },
-        body: JSON.stringify({ tag: 'posts' }),
-      });
     },
 
     onSuccess: (_, variables) => {

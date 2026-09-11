@@ -87,7 +87,7 @@ export default function TopicDetailPage({ params }: { params: Promise<{ id: stri
 
   // 댓글,좋아요 realtime 핸들러
   const { handleCommentInsert, handleCommentDelete } = useCommentRealtimeHandlers(topicId);
-  const { handleLikeInsert, handleLikeDelete } = useTopicRealtimeHandlers(topicId);
+  const { handleLikeInsert, handleLikeDelete } = useTopicRealtimeHandlers(topicId, user?.id);
 
   const [authorNickname, setAuthorNickname] = useState('알 수 없는 사용자');
 
